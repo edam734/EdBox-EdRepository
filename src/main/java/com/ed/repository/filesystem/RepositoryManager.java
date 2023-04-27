@@ -23,7 +23,6 @@ public class RepositoryManager {
    * 
    * @param in The input stream that carries the data
    * @param target The path to be modified
-   * @param updateIndex
    * @param username who uploaded this file
    * @param options Some copy options
    * @return true if was successful
@@ -36,9 +35,7 @@ public class RepositoryManager {
 
     UnfoldPathResolver unfoldPathResolver = new UnfoldPathResolver(target);
     final Path directory = unfoldPathResolver.getDirectory();
-    System.out.println("directory = " + directory);
     final Path indexFile = unfoldPathResolver.getIndexFile();
-    System.out.println("indexFile = " + indexFile);
 
     CreationDirectoryResult wasDirectoryCreatedResult = makeDirectory(directory.toFile());
     switch (wasDirectoryCreatedResult) {
@@ -53,7 +50,7 @@ public class RepositoryManager {
         throw new IllegalArgumentException("Unexpected value: " + wasDirectoryCreatedResult);
     }
     int newVersion = ++version;
-    writeNewIndexFileEntry(indexFile.toFile(), Integer.toString(newVersion), " : ", username);
+    writeIndexFileNewEntry(indexFile.toFile(), Integer.toString(newVersion), " : ", username);
 
     target = unfoldPathResolver.getVersionedFilename(newVersion);
 
@@ -69,7 +66,7 @@ public class RepositoryManager {
     return Integer.parseInt(lastLine.split(" : ")[0]);
   }
 
-  private static void writeNewIndexFileEntry(File file, String... strings) throws IOException {
+  private static void writeIndexFileNewEntry(File file, String... strings) throws IOException {
     boolean alreadyExists = Files.exists(Path.of(file.getPath()));
     // append to an existing file, create file if it doesn't initially exist
     try (OutputStream outputStream =
@@ -84,11 +81,11 @@ public class RepositoryManager {
   }
 
   /*
-   * A partir do Java 7, temos a classe Files que contém métodos auxiliares para lidar com operações
-   * de E/S.
+   * As of Java 7, we have the Files class which contains helper methods to handle operations of
+   * I/O.
    *
-   * Podemos usar o método Files.copy() para ler todos os bytes de um InputStream e copiá-los para
-   * um arquivo local numa única linha de código.
+   * We can use the Files.copy() method to read all bytes from an InputStream and copy them to a
+   * local file in a single line of code.
    * 
    */
   private static boolean createFileNewVersion(final InputStream in, final Path target,

@@ -75,7 +75,7 @@ public class RepositoryManagerTest {
   }
 
   @Test
-  public void testReceiveThreeFile_ThenWriteAndUpdateVersionWithSuccess() throws IOException {
+  public void testReceiveFileThreeTimes_ThenWriteAndUpdateVersionWithSuccess() throws IOException {
 
     File file = ResourceUtils.getFile(INPUT_LOCATION + "test2.TXT");
 
