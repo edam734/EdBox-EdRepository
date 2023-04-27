@@ -1,0 +1,13 @@
+version: "3.8"
+
+services:
+  springbootapp:
+    image: springbootapp:latest
+    build:
+      context: .
+    container_name: springbootapp
+    expose:
+      - 8080
+    ports:
+      - 8082:8080
+    restart: unless-stopped
