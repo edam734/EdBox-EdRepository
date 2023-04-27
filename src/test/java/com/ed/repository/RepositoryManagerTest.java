@@ -55,20 +55,18 @@ public class RepositoryManagerTest {
 
     // created the file 'test1.index.txt'
     File indexFile = ResourceUtils
-        .getFile(OUTPUT_TEST_1 + "repo/test1 # TXT/test1.index.txt".replace("/", File.separator));
+        .getFile(OUTPUT_TEST_1 + "repo/test1#TXT/test1.index.txt".replace("/", File.separator));
     Assertions.assertTrue(indexFile.exists());
     List<String> allIndexLines = Files.readAllLines(Paths.get(indexFile.getPath()));
-    Assertions.assertNotNull(allIndexLines);
     Assertions.assertEquals(1, allIndexLines.size());
     String lineIndexFile = allIndexLines.get(0);
     Assertions.assertEquals("1 : edam734", lineIndexFile);
 
     // created the file 'test1-v1.TXT'
     File newFile = ResourceUtils
-        .getFile(OUTPUT_TEST_1 + "repo/test1 # TXT/test1-v1.TXT".replace("/", File.separator));
+        .getFile(OUTPUT_TEST_1 + "repo/test1#TXT/test1-v1.TXT".replace("/", File.separator));
     Assertions.assertTrue(newFile.exists());
     List<String> allNewFileLines = Files.readAllLines(Paths.get(newFile.getPath()));
-    Assertions.assertNotNull(allNewFileLines);
     Assertions.assertEquals(1, allNewFileLines.size());
     String lineNewFile = allNewFileLines.get(0);
     Assertions.assertEquals("My test1", lineNewFile);
@@ -91,10 +89,9 @@ public class RepositoryManagerTest {
 
     // created the file 'test2.index.txt'
     File indexFile = ResourceUtils
-        .getFile(OUTPUT_TEST_2 + "repo/test2 # TXT/test2.index.txt".replace("/", File.separator));
+        .getFile(OUTPUT_TEST_2 + "repo/test2#TXT/test2.index.txt".replace("/", File.separator));
     Assertions.assertTrue(indexFile.exists());
     List<String> allIndexLines = Files.readAllLines(Paths.get(indexFile.getPath()));
-    Assertions.assertNotNull(allIndexLines);
     Assertions.assertEquals(3, allIndexLines.size());
     Assertions.assertEquals("1 : maria", allIndexLines.get(0));
     Assertions.assertEquals("2 : johnny_cash", allIndexLines.get(1));
@@ -102,10 +99,9 @@ public class RepositoryManagerTest {
 
     // created the file to the third version 'test2-v3.TXT'
     File newFile = ResourceUtils
-        .getFile(OUTPUT_TEST_2 + "repo/test2 # TXT/test2-v3.TXT".replace("/", File.separator));
+        .getFile(OUTPUT_TEST_2 + "repo/test2#TXT/test2-v3.TXT".replace("/", File.separator));
     Assertions.assertTrue(newFile.exists());
     List<String> allNewFileLines = Files.readAllLines(Paths.get(newFile.getPath()));
-    Assertions.assertNotNull(allNewFileLines);
     Assertions.assertEquals(1, allNewFileLines.size());
     Assertions.assertEquals("My test for several versions", allNewFileLines.get(0));
   }
