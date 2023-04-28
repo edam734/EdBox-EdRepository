@@ -3,7 +3,7 @@ package com.ed.repository.filesystem;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-public class UnfoldPathResolver implements PathResolver {
+public class ServerPathResolver implements PathResolver {
   private String extension;
   private String filename;
   private Path directory;
@@ -21,7 +21,7 @@ public class UnfoldPathResolver implements PathResolver {
     return filePath(directory, filename, newVersion);
   }
 
-  public UnfoldPathResolver(Path path) {
+  public ServerPathResolver(Path path) {
     resolve(path);
   }
 

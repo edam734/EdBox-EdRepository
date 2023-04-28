@@ -3,7 +3,7 @@ package com.ed.repository.filesystem;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-class FoldPathResolver implements PathResolver {
+class ClientPathResolver implements PathResolver {
 
   private String extension;
   private Path directory;
@@ -14,7 +14,7 @@ class FoldPathResolver implements PathResolver {
    * @requires !path.isDirectory()
    * @param path
    */
-  public FoldPathResolver(Path path) {
+  public ClientPathResolver(Path path) {
     resolve(path);
   }
 

@@ -2,7 +2,10 @@ package com.ed.repository.filesystem;
 
 import static java.nio.file.StandardOpenOption.APPEND;
 import static java.nio.file.StandardOpenOption.CREATE;
+import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -11,11 +14,21 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.CopyOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
+import com.ed.repository.exceptions.NotPathToAServerFileException;
+import com.ed.repository.exceptions.VersionGreaterThanLatestVersionException;
 
 public class RepositoryManager {
 
   final static Charset ENCODING = StandardCharsets.UTF_8;
+
+  static enum CreationDirectoryResult {
+    ALREADY_EXISTS, CREATED, NOT_CREATED;
+  }
 
   /**
    * Place a new file in the appropriate location on the server, write to the ".index.txt" file with
@@ -33,16 +46,16 @@ public class RepositoryManager {
 
     int version = 0;
 
-    UnfoldPathResolver unfoldPathResolver = new UnfoldPathResolver(target);
-    final Path directory = unfoldPathResolver.getDirectory();
-    final Path indexFile = unfoldPathResolver.getIndexFile();
+    ServerPathResolver serverPathResolver = new ServerPathResolver(target);
+    final Path directory = serverPathResolver.getDirectory();
+    final Path indexFile = serverPathResolver.getIndexFile();
 
     CreationDirectoryResult wasDirectoryCreatedResult = makeDirectory(directory.toFile());
     switch (wasDirectoryCreatedResult) {
       case NOT_CREATED:
         return false;
       case ALREADY_EXISTS:
-        version = getMostRecentVersion(indexFile);
+        version = getLatestVersion(indexFile);
         break;
       case CREATED:
         break;
@@ -52,13 +65,12 @@ public class RepositoryManager {
     int newVersion = ++version;
     writeIndexFileNewEntry(indexFile.toFile(), Integer.toString(newVersion), " : ", username);
 
-    target = unfoldPathResolver.getVersionedFilename(newVersion);
-
+    target = serverPathResolver.getVersionedFilename(newVersion);
     return createFileNewVersion(in, target, options);
   }
 
-  private static int getMostRecentVersion(final Path path) throws IOException {
-    List<String> lines = Files.readAllLines(path);
+  private static int getLatestVersion(final Path indexPath) throws IOException {
+    List<String> lines = Files.readAllLines(indexPath);
     if (lines.size() == 0) {
       return 0; // empty file for some reason
     }
@@ -112,7 +124,88 @@ public class RepositoryManager {
     }
   }
 
-  static enum CreationDirectoryResult {
-    ALREADY_EXISTS, CREATED, NOT_CREATED;
+
+  /**
+   * Returns all subfiles of this {@code file} with the name adapted to go to the user.
+   * <p>
+   * After this method is called, it's necessary to treat the name that goes within BinamedFile,
+   * removing the part that corresponds to the name of the user's repository.
+   * 
+   * @param file The file to search
+   * @return All subfiles of this {@code file}
+   * @throws IOException
+   */
+  public static List<BinamedFile> getSubfiles(File file) throws IOException {
+    return getSubfiles(file, new ArrayList<>());
   }
+
+  private static List<BinamedFile> getSubfiles(File file, List<BinamedFile> subfiles)
+      throws IOException {
+    try {
+      BinamedFile binamedFile = getFile(file);
+      subfiles.add(binamedFile);
+    } catch (NotPathToAServerFileException e) {
+      if (file.isDirectory()) {
+        for (File subfile : file.listFiles()) {
+          getSubfiles(subfile, subfiles);
+        }
+        return subfiles;
+      } else {
+        BinamedFile binamedFile = parseFile(file);
+        subfiles.add(binamedFile);
+      }
+    }
+    return subfiles;
+  }
+
+  private static BinamedFile parseFile(File file) {
+    Path directory = file.toPath();
+    if (!file.isDirectory()) {
+      directory = directory.getParent();
+    }
+    ClientPathResolver clientPathResolver = new ClientPathResolver(directory);
+    Path unversionedPath = clientPathResolver.getUnversionedFilename(file.toPath());
+    return new BinamedFile(file, unversionedPath);
+  }
+
+  /**
+   * Get latest version of a file
+   * 
+   * @param file A file with 'MARK' on his path
+   * @return
+   * @throws IOException
+   */
+  public static BinamedFile getFile(File file) throws IOException, NotPathToAServerFileException {
+    return getFile(file, -1);
+  }
+
+  /**
+   * Get specific version of a file
+   * 
+   * @param file A file with 'MARK' on his path
+   * @param version The desired version of the file
+   * @return
+   * @throws IOException
+   */
+  public static BinamedFile getFile(File file, int version)
+      throws IOException, NotPathToAServerFileException {
+    if (!file.getName().contains(PathResolver.MARK)) {
+      throw new NotPathToAServerFileException("Is not a server file path");
+    }
+
+    ClientPathResolver clientPathResolver = new ClientPathResolver(file.toPath());
+    int latestVersion = getLatestVersion(clientPathResolver.getIndexFile());
+    if (version == -1) {
+      // set latest version
+      version = latestVersion;
+    }
+    if (version > latestVersion) {
+      throw new VersionGreaterThanLatestVersionException(
+          String.format("Version %s bigger than the latest version %s", version, latestVersion));
+    }
+    File subfile = new File(clientPathResolver.getVersionedFilename(version).toString());
+    Path unversionedPath = clientPathResolver.getUnversionedFilename(subfile.toPath());
+    return new BinamedFile(subfile, unversionedPath);
+  }
+
 }

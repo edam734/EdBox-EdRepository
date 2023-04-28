@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -15,6 +16,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.springframework.util.ResourceUtils;
+import com.ed.repository.exceptions.NotPathToAServerFileException;
+import com.ed.repository.exceptions.VersionGreaterThanLatestVersionException;
+import com.ed.repository.filesystem.BinamedFile;
 import com.ed.repository.filesystem.RepositoryManager;
 import com.ed.repository.utils.AppUtils;
 
@@ -38,6 +42,10 @@ public class RepositoryManagerTest {
       AppUtils.deleteDirectory(output);
     }
   }
+
+
+  /* received file related tests */
+
 
   @Test
   public void testReceiveOneFile_ThenWriteToDiskWithSuccess() throws IOException {
@@ -104,5 +112,97 @@ public class RepositoryManagerTest {
     List<String> allNewFileLines = Files.readAllLines(Paths.get(newFile.getPath()));
     Assertions.assertEquals(1, allNewFileLines.size());
     Assertions.assertEquals("My test for several versions", allNewFileLines.get(0));
+  }
+
+
+
+  /* get subfiles related tests */
+
+
+  @Test
+  public void testGetAllSubfiles() throws IOException {
+    File directory = ResourceUtils.getFile(INPUT_LOCATION + "edam734");
+    List<BinamedFile> files = RepositoryManager.getSubfiles(directory);
+
+    Assertions.assertEquals(2, files.size());
+
+    BinamedFile binamedFile1 = new BinamedFile(
+        new File("repo/edam734/test2#TXT/test2-v3.txt".replace("/", File.separator)),
+        Paths.get("repo/edam734/test2.txt".replace("/", File.separator)));
+    BinamedFile binamedFile2 = new BinamedFile(
+        new File("repo/edam734/test3#TXT/test3-v2.txt".replace("/", File.separator)),
+        Paths.get("repo/edam734/test3.txt".replace("/", File.separator)));
+    List<BinamedFile> expectedList = new ArrayList<>();
+    expectedList.add(binamedFile1);
+    expectedList.add(binamedFile2);
+
+    Assertions.assertEquals(expectedList, files);
+  }
+
+  @Test
+  public void testGetAllSubfiles_butInputIsAFile() throws IOException {
+    File file = ResourceUtils.getFile(INPUT_LOCATION + "edam734/test2#TXT/test2-v1.TXT");
+    List<BinamedFile> files = RepositoryManager.getSubfiles(file);
+
+    Assertions.assertEquals(1, files.size());
+
+    BinamedFile binamedFile = new BinamedFile(
+        new File("repo/edam734/test2#TXT/test2-v1.TXT".replace("/", File.separator)),
+        Paths.get("repo/edam734/test2.TXT".replace("/", File.separator)));
+    List<BinamedFile> expectedList = new ArrayList<>();
+    expectedList.add(binamedFile);
+
+    Assertions.assertEquals(expectedList, files);
+  }
+
+  @Test
+  public void testGetLatestFileVersion() throws IOException, NotPathToAServerFileException {
+    File directory =
+        ResourceUtils.getFile(INPUT_LOCATION + "edam734/test2#TXT".replace("/", File.separator));
+    BinamedFile file = RepositoryManager.getFile(directory);
+
+    // the latest version is 3
+    Assertions.assertEquals(3, AppUtils.getVersionFromFilename(file.getContent().getName()));
+  }
+
+  @Test
+  public void testGetLatestFileVersion_butIsNotAFile_ThrowException() throws IOException {
+    File directory =
+        ResourceUtils.getFile(INPUT_LOCATION + "edam734/".replace("/", File.separator));
+    NotPathToAServerFileException exception = Assertions.assertThrows(
+        NotPathToAServerFileException.class, () -> RepositoryManager.getFile(directory));
+    Assertions.assertEquals("Is not a server file path", exception.getMessage());
+  }
+
+  @Test
+  public void testGetSpecificFileVersion() throws IOException, NotPathToAServerFileException {
+    File directory =
+        ResourceUtils.getFile(INPUT_LOCATION + "edam734/test2#TXT".replace("/", File.separator));
+    int wantedVersion = 2;
+    BinamedFile file = RepositoryManager.getFile(directory, wantedVersion);
+
+    Assertions.assertEquals(wantedVersion,
+        AppUtils.getVersionFromFilename(file.getContent().getName()));
+  }
+
+  @Test
+  public void testGetSpecificFileVersion_butIsNotAFile_ThrowException() throws IOException {
+    File directory =
+        ResourceUtils.getFile(INPUT_LOCATION + "edam734/".replace("/", File.separator));
+    NotPathToAServerFileException exception = Assertions.assertThrows(
+        NotPathToAServerFileException.class, () -> RepositoryManager.getFile(directory, 2));
+    Assertions.assertEquals("Is not a server file path", exception.getMessage());
+  }
+
+  @Test
+  public void testGetSpecificFileVersion_butVersionIsBiggerThanLatestVersion() throws IOException {
+    File directory =
+        ResourceUtils.getFile(INPUT_LOCATION + "edam734/test2#TXT".replace("/", File.separator));
+    // latest version is 3, so we ask for version 4
+    VersionGreaterThanLatestVersionException exception =
+        Assertions.assertThrows(VersionGreaterThanLatestVersionException.class,
+            () -> RepositoryManager.getFile(directory, 4));
+    Assertions.assertEquals(String.format("Version %s bigger than the latest version %s", 4, 3),
+        exception.getMessage());
   }
 }
