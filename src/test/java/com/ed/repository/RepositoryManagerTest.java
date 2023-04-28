@@ -126,15 +126,15 @@ public class RepositoryManagerTest {
 
     Assertions.assertEquals(2, files.size());
 
-    WrappedFile binamedFile1 = new WrappedFile(
+    WrappedFile wrappedFile1 = new WrappedFile(
         new File("repo/edam734/test2#TXT/test2-v3.txt".replace("/", File.separator)),
         Paths.get("repo/edam734/test2.txt".replace("/", File.separator)));
-    WrappedFile binamedFile2 = new WrappedFile(
+    WrappedFile wrappedFile2 = new WrappedFile(
         new File("repo/edam734/test3#TXT/test3-v2.txt".replace("/", File.separator)),
         Paths.get("repo/edam734/test3.txt".replace("/", File.separator)));
     List<WrappedFile> expectedList = new ArrayList<>();
-    expectedList.add(binamedFile1);
-    expectedList.add(binamedFile2);
+    expectedList.add(wrappedFile1);
+    expectedList.add(wrappedFile2);
 
     Assertions.assertEquals(expectedList, files);
   }
@@ -146,11 +146,11 @@ public class RepositoryManagerTest {
 
     Assertions.assertEquals(1, files.size());
 
-    WrappedFile binamedFile = new WrappedFile(
+    WrappedFile wrappedFile = new WrappedFile(
         new File("repo/edam734/test2#TXT/test2-v1.TXT".replace("/", File.separator)),
         Paths.get("repo/edam734/test2.TXT".replace("/", File.separator)));
     List<WrappedFile> expectedList = new ArrayList<>();
-    expectedList.add(binamedFile);
+    expectedList.add(wrappedFile);
 
     Assertions.assertEquals(expectedList, files);
   }

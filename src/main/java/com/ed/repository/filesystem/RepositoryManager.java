@@ -122,7 +122,7 @@ public class RepositoryManager {
   /**
    * Returns all subfiles of this {@code file} with the name adapted to go to the user.
    * <p>
-   * After this method is called, it's necessary to treat the name that goes within BinamedFile,
+   * After this method is called, it's necessary to treat the name that goes within WrappedFile,
    * removing the part that corresponds to the name of the user's repository.
    * 
    * @param file The file to search
@@ -136,8 +136,8 @@ public class RepositoryManager {
   private static List<WrappedFile> getSubfiles(File file, List<WrappedFile> subfiles)
       throws IOException {
     try {
-      WrappedFile binamedFile = getFile(file);
-      subfiles.add(binamedFile);
+      WrappedFile wrappedFile = getFile(file);
+      subfiles.add(wrappedFile);
     } catch (NotPathToAServerFileException e) {
       if (file.isDirectory()) {
         for (File subfile : file.listFiles()) {
@@ -145,8 +145,8 @@ public class RepositoryManager {
         }
         return subfiles;
       } else {
-        WrappedFile binamedFile = parseFile(file);
-        subfiles.add(binamedFile);
+        WrappedFile wrappedFile = parseFile(file);
+        subfiles.add(wrappedFile);
       }
     }
     return subfiles;
