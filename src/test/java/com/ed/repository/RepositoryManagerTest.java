@@ -18,7 +18,7 @@ import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.springframework.util.ResourceUtils;
 import com.ed.repository.exceptions.NotPathToAServerFileException;
 import com.ed.repository.exceptions.VersionGreaterThanLatestVersionException;
-import com.ed.repository.filesystem.BinamedFile;
+import com.ed.repository.filesystem.WrappedFile;
 import com.ed.repository.filesystem.RepositoryManager;
 import com.ed.repository.utils.AppUtils;
 
@@ -122,17 +122,17 @@ public class RepositoryManagerTest {
   @Test
   public void testGetAllSubfiles() throws IOException {
     File directory = ResourceUtils.getFile(INPUT_LOCATION + "edam734");
-    List<BinamedFile> files = RepositoryManager.getSubfiles(directory);
+    List<WrappedFile> files = RepositoryManager.getSubfiles(directory);
 
     Assertions.assertEquals(2, files.size());
 
-    BinamedFile binamedFile1 = new BinamedFile(
+    WrappedFile binamedFile1 = new WrappedFile(
         new File("repo/edam734/test2#TXT/test2-v3.txt".replace("/", File.separator)),
         Paths.get("repo/edam734/test2.txt".replace("/", File.separator)));
-    BinamedFile binamedFile2 = new BinamedFile(
+    WrappedFile binamedFile2 = new WrappedFile(
         new File("repo/edam734/test3#TXT/test3-v2.txt".replace("/", File.separator)),
         Paths.get("repo/edam734/test3.txt".replace("/", File.separator)));
-    List<BinamedFile> expectedList = new ArrayList<>();
+    List<WrappedFile> expectedList = new ArrayList<>();
     expectedList.add(binamedFile1);
     expectedList.add(binamedFile2);
 
@@ -142,14 +142,14 @@ public class RepositoryManagerTest {
   @Test
   public void testGetAllSubfiles_butInputIsAFile() throws IOException {
     File file = ResourceUtils.getFile(INPUT_LOCATION + "edam734/test2#TXT/test2-v1.TXT");
-    List<BinamedFile> files = RepositoryManager.getSubfiles(file);
+    List<WrappedFile> files = RepositoryManager.getSubfiles(file);
 
     Assertions.assertEquals(1, files.size());
 
-    BinamedFile binamedFile = new BinamedFile(
+    WrappedFile binamedFile = new WrappedFile(
         new File("repo/edam734/test2#TXT/test2-v1.TXT".replace("/", File.separator)),
         Paths.get("repo/edam734/test2.TXT".replace("/", File.separator)));
-    List<BinamedFile> expectedList = new ArrayList<>();
+    List<WrappedFile> expectedList = new ArrayList<>();
     expectedList.add(binamedFile);
 
     Assertions.assertEquals(expectedList, files);
@@ -159,7 +159,7 @@ public class RepositoryManagerTest {
   public void testGetLatestFileVersion() throws IOException, NotPathToAServerFileException {
     File directory =
         ResourceUtils.getFile(INPUT_LOCATION + "edam734/test2#TXT".replace("/", File.separator));
-    BinamedFile file = RepositoryManager.getFile(directory);
+    WrappedFile file = RepositoryManager.getFile(directory);
 
     // the latest version is 3
     Assertions.assertEquals(3, AppUtils.getVersionFromFilename(file.getContent().getName()));
@@ -179,14 +179,14 @@ public class RepositoryManagerTest {
     File directory =
         ResourceUtils.getFile(INPUT_LOCATION + "edam734/test2#TXT".replace("/", File.separator));
     int wantedVersion = 2;
-    BinamedFile file = RepositoryManager.getFile(directory, wantedVersion);
+    WrappedFile file = RepositoryManager.getFile(directory, wantedVersion);
 
     Assertions.assertEquals(wantedVersion,
         AppUtils.getVersionFromFilename(file.getContent().getName()));
   }
 
   @Test
-  public void testGetSpecificFileVersion_butIsNotAFile_ThrowException() throws IOException {
+  public void testGetSpecificFileVersion_butIsNotAPathToAFile_ThrowException() throws IOException {
     File directory =
         ResourceUtils.getFile(INPUT_LOCATION + "edam734/".replace("/", File.separator));
     NotPathToAServerFileException exception = Assertions.assertThrows(

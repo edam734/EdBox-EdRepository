@@ -2,10 +2,7 @@ package com.ed.repository.filesystem;
 
 import static java.nio.file.StandardOpenOption.APPEND;
 import static java.nio.file.StandardOpenOption.CREATE;
-import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -14,11 +11,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.CopyOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 import com.ed.repository.exceptions.NotPathToAServerFileException;
 import com.ed.repository.exceptions.VersionGreaterThanLatestVersionException;
 
@@ -135,14 +129,14 @@ public class RepositoryManager {
    * @return All subfiles of this {@code file}
    * @throws IOException
    */
-  public static List<BinamedFile> getSubfiles(File file) throws IOException {
+  public static List<WrappedFile> getSubfiles(File file) throws IOException {
     return getSubfiles(file, new ArrayList<>());
   }
 
-  private static List<BinamedFile> getSubfiles(File file, List<BinamedFile> subfiles)
+  private static List<WrappedFile> getSubfiles(File file, List<WrappedFile> subfiles)
       throws IOException {
     try {
-      BinamedFile binamedFile = getFile(file);
+      WrappedFile binamedFile = getFile(file);
       subfiles.add(binamedFile);
     } catch (NotPathToAServerFileException e) {
       if (file.isDirectory()) {
@@ -151,21 +145,21 @@ public class RepositoryManager {
         }
         return subfiles;
       } else {
-        BinamedFile binamedFile = parseFile(file);
+        WrappedFile binamedFile = parseFile(file);
         subfiles.add(binamedFile);
       }
     }
     return subfiles;
   }
 
-  private static BinamedFile parseFile(File file) {
+  private static WrappedFile parseFile(File file) {
     Path directory = file.toPath();
     if (!file.isDirectory()) {
       directory = directory.getParent();
     }
     ClientPathResolver clientPathResolver = new ClientPathResolver(directory);
     Path unversionedPath = clientPathResolver.getUnversionedFilename(file.toPath());
-    return new BinamedFile(file, unversionedPath);
+    return new WrappedFile(file, unversionedPath);
   }
 
   /**
@@ -175,7 +169,7 @@ public class RepositoryManager {
    * @return
    * @throws IOException
    */
-  public static BinamedFile getFile(File file) throws IOException, NotPathToAServerFileException {
+  public static WrappedFile getFile(File file) throws IOException, NotPathToAServerFileException {
     return getFile(file, -1);
   }
 
@@ -187,7 +181,7 @@ public class RepositoryManager {
    * @return
    * @throws IOException
    */
-  public static BinamedFile getFile(File file, int version)
+  public static WrappedFile getFile(File file, int version)
       throws IOException, NotPathToAServerFileException {
     if (!file.getName().contains(PathResolver.MARK)) {
       throw new NotPathToAServerFileException("Is not a server file path");
@@ -205,7 +199,7 @@ public class RepositoryManager {
     }
     File subfile = new File(clientPathResolver.getVersionedFilename(version).toString());
     Path unversionedPath = clientPathResolver.getUnversionedFilename(subfile.toPath());
-    return new BinamedFile(subfile, unversionedPath);
+    return new WrappedFile(subfile, unversionedPath);
   }
 
 }
