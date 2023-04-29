@@ -7,7 +7,6 @@ import java.nio.file.CopyOption;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import com.ed.repository.exceptions.NotPathToAServerFileException;
 import com.ed.repository.exceptions.VersionGreaterThanLatestVersionException;
 
 public class RepositoryManager {
@@ -72,16 +71,23 @@ public class RepositoryManager {
 
   private static List<WrappedFile> getSubfiles(File file, List<WrappedFile> subfiles)
       throws IOException {
-    try {
-      WrappedFile wrappedFile = getFile(file);
-      subfiles.add(wrappedFile);
-    } catch (NotPathToAServerFileException e) {
-      if (file.isDirectory()) {
+    if (file.isDirectory()) {
+      // verify if it's a directory that is a representation of a file in the server's repository
+      if (ServerRepoEnvironmentResolver.isVersioned(file.toPath())) {
+        WrappedFile wrappedFile = getFile(file);
+        subfiles.add(wrappedFile);
+      }
+      // it's a common directory
+      else {
         for (File subfile : file.listFiles()) {
           getSubfiles(subfile, subfiles);
         }
-        return subfiles;
-      } else {
+      }
+    }
+    // else, it's a file
+    else {
+      // must be a versioned file
+      if (ServerRepoEnvironmentResolver.isVersioned(file.toPath())) {
         WrappedFile wrappedFile = parseFile(file);
         subfiles.add(wrappedFile);
       }
@@ -101,11 +107,12 @@ public class RepositoryManager {
   /**
    * Get latest version of a file
    * 
-   * @param file - A representation of a file in the server's repositoryh
+   * @param file - A representation of a file in the server's repository
    * @return
    * @throws IOException
    */
-  public static WrappedFile getFile(File file) throws IOException, NotPathToAServerFileException {
+  public static WrappedFile getFile(File file)
+      throws IOException/* , NotPathToAServerFileException */ {
     return getFile(file, -1);
   }
 
@@ -117,12 +124,8 @@ public class RepositoryManager {
    * @return
    * @throws IOException
    */
-  public static WrappedFile getFile(File file, int version)
-      throws IOException, NotPathToAServerFileException {
-    // file HAS to be in format. dir1/dir2.../filename#extension
-    if (!file.getName().contains(ServerRepoEnvironmentResolver.MARK)) {
-      throw new NotPathToAServerFileException("Is not a server file path");
-    }
+  public static WrappedFile getFile(File file, int version) throws IOException {
+    // file HAS to be a directory in format. dir1/dir2.../filename#extension/
 
     ServerRepoEnvironmentResolver serverRepoEnvironmentResolver =
         new ServerRepoEnvironmentResolver(file.toPath());

@@ -16,7 +16,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.springframework.util.ResourceUtils;
-import com.ed.repository.exceptions.NotPathToAServerFileException;
 import com.ed.repository.exceptions.VersionGreaterThanLatestVersionException;
 import com.ed.repository.filesystem.RepositoryManager;
 import com.ed.repository.filesystem.ServerRepoEnvironmentResolver;
@@ -121,7 +120,7 @@ public class RepositoryManagerTest {
 
 
   @Test
-  public void testGetAllSubfiles() throws IOException {
+  public void testGetAllSubfiles_edam734Repo() throws IOException {
     File directory = ResourceUtils.getFile(INPUT_LOCATION + "edam734");
     List<WrappedFile> files = RepositoryManager.getSubfiles(directory);
 
@@ -157,7 +156,7 @@ public class RepositoryManagerTest {
   }
 
   @Test
-  public void testGetLatestFileVersion() throws IOException, NotPathToAServerFileException {
+  public void testGetLatestFileVersion() throws IOException {
     File directory =
         ResourceUtils.getFile(INPUT_LOCATION + "edam734/test2#TXT".replace("/", File.separator));
     WrappedFile file = RepositoryManager.getFile(directory);
@@ -168,16 +167,7 @@ public class RepositoryManagerTest {
   }
 
   @Test
-  public void testGetLatestFileVersion_butIsNotAFile_ThrowException() throws IOException {
-    File directory =
-        ResourceUtils.getFile(INPUT_LOCATION + "edam734/".replace("/", File.separator));
-    NotPathToAServerFileException exception = Assertions.assertThrows(
-        NotPathToAServerFileException.class, () -> RepositoryManager.getFile(directory));
-    Assertions.assertEquals("Is not a server file path", exception.getMessage());
-  }
-
-  @Test
-  public void testGetSpecificFileVersion() throws IOException, NotPathToAServerFileException {
+  public void testGetSpecificFileVersion() throws IOException {
     File directory =
         ResourceUtils.getFile(INPUT_LOCATION + "edam734/test2#TXT".replace("/", File.separator));
     int wantedVersion = 2;
@@ -185,15 +175,6 @@ public class RepositoryManagerTest {
 
     Assertions.assertEquals(wantedVersion,
         ServerRepoEnvironmentResolver.getVersionFromFilename(file.getContent().getName()));
-  }
-
-  @Test
-  public void testGetSpecificFileVersion_butIsNotAPathToAFile_ThrowException() throws IOException {
-    File directory =
-        ResourceUtils.getFile(INPUT_LOCATION + "edam734/".replace("/", File.separator));
-    NotPathToAServerFileException exception = Assertions.assertThrows(
-        NotPathToAServerFileException.class, () -> RepositoryManager.getFile(directory, 2));
-    Assertions.assertEquals("Is not a server file path", exception.getMessage());
   }
 
   @Test
@@ -249,4 +230,61 @@ public class RepositoryManagerTest {
     Assertions.assertEquals(expected, actual.toString());
   }
 
+  @Test
+  public void testGetAllSubfiles_johnn50Repo() throws IOException {
+    File directory = ResourceUtils.getFile(INPUT_LOCATION + "johnny50");
+    List<WrappedFile> files = RepositoryManager.getSubfiles(directory);
+
+    Assertions.assertEquals(2, files.size());
+
+    WrappedFile wrappedFile1 = new WrappedFile(
+        new File("repo/johnny50/city/house/room1#TXT/room1-v2.txt".replace("/", File.separator)),
+        Paths.get("repo/johnny50/city/house/room1.txt".replace("/", File.separator)));
+    WrappedFile wrappedFile2 = new WrappedFile(
+        new File("repo/johnny50/test2#TXT/test2-v3.txt".replace("/", File.separator)),
+        Paths.get("repo/johnny50/test2.txt".replace("/", File.separator)));
+    List<WrappedFile> expectedList = new ArrayList<>();
+    expectedList.add(wrappedFile1);
+    expectedList.add(wrappedFile2);
+
+    Assertions.assertEquals(expectedList, files);
+  }
+
+  @Test
+  public void testGetAllFilesDirectlyOfFolder() throws IOException {
+    File directory =
+        ResourceUtils.getFile(INPUT_LOCATION + "johnny50/test2#TXT".replace("/", File.separator));
+    List<WrappedFile> files = RepositoryManager.getSubfiles(directory);
+
+    WrappedFile wrappedFile = new WrappedFile(
+        new File("repo/johnny50/test2#TXT/test2-v3.txt".replace("/", File.separator)),
+        Paths.get("repo/johnny50/test2.txt".replace("/", File.separator)));
+
+    Assertions.assertEquals(wrappedFile, files.get(0));
+  }
+
+
+  @Test
+  public void testGetAllFilesDirectlyOfAVersionedFile() throws IOException {
+    File directory = ResourceUtils
+        .getFile(INPUT_LOCATION + "johnny50/test2#TXT/test2-v1.TXT".replace("/", File.separator));
+    List<WrappedFile> files = RepositoryManager.getSubfiles(directory);
+
+    WrappedFile wrappedFile = new WrappedFile(
+        new File("repo/johnny50/test2#TXT/test2-v1.TXT".replace("/", File.separator)),
+        Paths.get("repo/johnny50/test2.TXT".replace("/", File.separator)));
+
+    Assertions.assertEquals(wrappedFile, files.get(0));
+  }
+
+  @Test
+  public void testGetAllFilesDirectlyOfAUnversionedFile() throws IOException {
+    File directory = ResourceUtils
+        .getFile(INPUT_LOCATION + "steven123/test100.TXT".replace("/", File.separator));
+    List<WrappedFile> files = RepositoryManager.getSubfiles(directory);
+
+    // don't return unversioned files
+    // (server's repo should't have unversioned files)
+    Assertions.assertTrue(files.isEmpty());
+  }
 }

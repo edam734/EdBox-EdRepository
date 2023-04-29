@@ -15,7 +15,6 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import com.ed.repository.exceptions.ServerRepoEnvironmentResolverException;
 
 public class ServerRepoEnvironmentResolver {
   final static Charset ENCODING = StandardCharsets.UTF_8;
@@ -38,9 +37,9 @@ public class ServerRepoEnvironmentResolver {
     }
     resolve(path);
   }
-
-  private boolean isVersioned(Path path) {
-    return path.toFile().getAbsolutePath().contains(MARK);
+  
+  public static boolean isVersioned(Path path) {
+    return path.toFile().getAbsolutePath().contains(ServerRepoEnvironmentResolver.MARK);
   }
 
   public Path getDirectory() {
@@ -186,4 +185,5 @@ public class ServerRepoEnvironmentResolver {
       return path;
     }
   }
+
 }
