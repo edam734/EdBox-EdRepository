@@ -103,7 +103,7 @@ public class ServerRepoEnvironmentResolver {
 
   public Path getVersionedPath(int version) {
     Path target = Paths.get(String.format("%s%s-v%d%s", directory.toString(),
-        ("/" + filename).replace("/", File.separator), version, extension));
+        (File.separator + filename), version, extension));
     return target;
   }
 
