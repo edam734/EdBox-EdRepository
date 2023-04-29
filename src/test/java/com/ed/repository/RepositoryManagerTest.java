@@ -18,8 +18,9 @@ import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.springframework.util.ResourceUtils;
 import com.ed.repository.exceptions.NotPathToAServerFileException;
 import com.ed.repository.exceptions.VersionGreaterThanLatestVersionException;
-import com.ed.repository.filesystem.WrappedFile;
 import com.ed.repository.filesystem.RepositoryManager;
+import com.ed.repository.filesystem.ServerRepoEnvironmentResolver;
+import com.ed.repository.filesystem.WrappedFile;
 import com.ed.repository.utils.AppUtils;
 
 @TestInstance(Lifecycle.PER_CLASS)
@@ -162,7 +163,8 @@ public class RepositoryManagerTest {
     WrappedFile file = RepositoryManager.getFile(directory);
 
     // the latest version is 3
-    Assertions.assertEquals(3, AppUtils.getVersionFromFilename(file.getContent().getName()));
+    Assertions.assertEquals(3,
+        ServerRepoEnvironmentResolver.getVersionFromFilename(file.getContent().getName()));
   }
 
   @Test
@@ -182,7 +184,7 @@ public class RepositoryManagerTest {
     WrappedFile file = RepositoryManager.getFile(directory, wantedVersion);
 
     Assertions.assertEquals(wantedVersion,
-        AppUtils.getVersionFromFilename(file.getContent().getName()));
+        ServerRepoEnvironmentResolver.getVersionFromFilename(file.getContent().getName()));
   }
 
   @Test
@@ -205,4 +207,46 @@ public class RepositoryManagerTest {
     Assertions.assertEquals(String.format("Version %s bigger than the latest version %s", 4, 3),
         exception.getMessage());
   }
+
+
+  @Test
+  public void testGetUnversionedName_butNameWithSeveralMarkersOfVersion() {
+    String filename1 = "dir1/dir2/test-v4f-vfs-v_-v#TXT/test-v4f-vfs-v_-v-v2.TXT";
+    String filename2 = "dir1/dir2/test-v4f-v67-v_-v#TXT/test-v4f-v67-v_-v wdwe-v2.TXT";
+    String filename3 = "dir1/dir2/test#TXT/test-v2.TXT";
+    String filename4 = "dir1/dir2/test_without_version#TXT/test_without_version.TXT";
+    Path actual1 = ServerRepoEnvironmentResolver.getUnversionedFilename(Paths.get(filename1));
+    Path actual2 = ServerRepoEnvironmentResolver.getUnversionedFilename(Paths.get(filename2));
+    Path actual3 = ServerRepoEnvironmentResolver.getUnversionedFilename(Paths.get(filename3));
+    Path actual4 = ServerRepoEnvironmentResolver.getUnversionedFilename(Paths.get(filename4));
+
+    String expected1 = "dir1/dir2/test-v4f-vfs-v_-v.TXT".replace("/", File.separator);
+    String expected2 = "dir1/dir2/test-v4f-v67-v_-v wdwe.TXT".replace("/", File.separator);
+    String expected3 = "dir1/dir2/test.TXT".replace("/", File.separator);
+    String expected4 = "dir1/dir2/test_without_version.TXT".replace("/", File.separator);
+    Assertions.assertEquals(expected1, actual1.toString());
+    Assertions.assertEquals(expected2, actual2.toString());
+    Assertions.assertEquals(expected3, actual3.toString());
+    Assertions.assertEquals(expected4, actual4.toString());
+  }
+
+
+  @Test
+  public void testGetUnversionedName_butInputIsADirectory() {
+    String filename = "dir1/dir2/test#TXT";
+    Path actual = ServerRepoEnvironmentResolver.getUnversionedFilename(Paths.get(filename));
+
+    String expected = "dir1/dir2/test.txt".replace("/", File.separator);
+    Assertions.assertEquals(expected, actual.toString());
+  }
+
+  @Test
+  public void testGetUnversionedName_butAlreadyUnversioned() {
+    String filename = "dir1/dir2/test.TXT";
+    Path actual = ServerRepoEnvironmentResolver.getUnversionedFilename(Paths.get(filename));
+
+    String expected = "dir1/dir2/test.TXT".replace("/", File.separator);
+    Assertions.assertEquals(expected, actual.toString());
+  }
+
 }
