@@ -56,7 +56,7 @@ public class ServerRepoEnvironmentResolver {
    * 
    */
   private void resolve(Path path) {
-    verify(path);
+//    verify(path);
     extension = getExtension(path.getFileName().toString());
     filename = removeExtension(path.getFileName().toString());
     Path pathWithoutExtension = Paths.get(removeExtension(path.toString()));
@@ -65,12 +65,12 @@ public class ServerRepoEnvironmentResolver {
     indexFile = indexFilePath(directory, filename);
   }
 
-  private void verify(Path path) {
-    if (path.toFile().isDirectory()) {
-      throw new ServerRepoEnvironmentResolverException(
-          String.format("Path %s is not a path to a file", path));
-    }
-  }
+//  private void verify(Path path) {
+//    if (path.toFile().isDirectory()) {
+//      throw new ServerRepoEnvironmentResolverException(
+//          String.format("Path %s is not a path to a file", path));
+//    }
+//  }
 
   private String getExtension(final String filename) {
     return filename.substring(filename.lastIndexOf('.'));
