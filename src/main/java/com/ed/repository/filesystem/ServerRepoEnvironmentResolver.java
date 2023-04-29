@@ -56,7 +56,6 @@ public class ServerRepoEnvironmentResolver {
    * 
    */
   private void resolve(Path path) {
-//    verify(path);
     extension = getExtension(path.getFileName().toString());
     filename = removeExtension(path.getFileName().toString());
     Path pathWithoutExtension = Paths.get(removeExtension(path.toString()));
@@ -64,13 +63,6 @@ public class ServerRepoEnvironmentResolver {
         String.format("%s%s%s", filename, MARK, extension.substring(1).toUpperCase()));
     indexFile = indexFilePath(directory, filename);
   }
-
-//  private void verify(Path path) {
-//    if (path.toFile().isDirectory()) {
-//      throw new ServerRepoEnvironmentResolverException(
-//          String.format("Path %s is not a path to a file", path));
-//    }
-//  }
 
   private String getExtension(final String filename) {
     return filename.substring(filename.lastIndexOf('.'));
@@ -173,7 +165,7 @@ public class ServerRepoEnvironmentResolver {
       String extension = "." + parts[1].toLowerCase();
       String filename = part + extension;
       return Paths.get(path.getParent().toString(), filename);
-    } 
+    }
     // dir1/dir2.../filename#TXT/filename-vX.txt
     else if (path.getParent().toString().contains(MARK)) {
       String complete = path.getFileName().toString();
@@ -188,7 +180,7 @@ public class ServerRepoEnvironmentResolver {
       }
       String dir = path.getParent().getParent().toString();
       return Paths.get(dir, newFilename);
-    } 
+    }
     // dir1/dir2.../filename.TXT
     else {
       return path;
