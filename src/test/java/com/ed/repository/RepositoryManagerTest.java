@@ -50,12 +50,12 @@ public class RepositoryManagerTest {
   @Test
   public void testReceiveOneFile_ThenWriteToDiskWithSuccess() throws IOException {
 
-    File file = ResourceUtils.getFile(INPUT_LOCATION + "test1.TXT");
+    Path file = ResourceUtils.getFile(INPUT_LOCATION + "test1.TXT").toPath();
 
-    InputStream inStream = new FileInputStream(file);
+    InputStream inStream = new FileInputStream(file.toString());
 
     boolean result = RepositoryManager.receiveFile(inStream,
-        Path.of(OUTPUT_TEST_1, file.toPath().toString()), "edam734");
+        Path.of(OUTPUT_TEST_1, file.toString()), "edam734");
 
     Assertions.assertTrue(result);
 
