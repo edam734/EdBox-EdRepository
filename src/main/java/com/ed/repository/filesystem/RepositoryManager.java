@@ -4,9 +4,13 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.CopyOption;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.FileAttribute;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import com.ed.repository.exceptions.VersionGreaterThanLatestVersionException;
 
 public class RepositoryManager {
@@ -29,7 +33,7 @@ public class RepositoryManager {
         new ServerRepoEnvironmentResolver(clientFile);
     final Path fileVersionsFolder = serverRepoEnvironmentResolver.getDirectory();
 
-    boolean wasDirectoryCreated = makeDirectory(fileVersionsFolder.toFile());
+    boolean wasDirectoryCreated = makeDirectory(fileVersionsFolder);
     if (!wasDirectoryCreated) {
       return false;
     }
@@ -39,15 +43,16 @@ public class RepositoryManager {
   /**
    * Creates a new directory if it does not already exist.
    * 
-   * @param file - A directory
-   * @requires file.isDirectory()
+   * @param path - A path to a directory
+   * @requires Files.isDirectory(path)
    * @return true if there's a directory of this file's path
+   * @throws IOException
    */
-  public static boolean makeDirectory(File file) {
-    if (file.exists()) {
+  public static boolean makeDirectory(Path path) throws IOException {
+    if (Files.exists(path)) {
       return true;
     } else {
-      if (file.mkdirs()) {
+      if (Files.createDirectories(path) != null) {
         return true;
       }
       return false;
@@ -61,25 +66,26 @@ public class RepositoryManager {
    * After this method is called, it's necessary to treat the name that goes within WrappedFile,
    * removing the part that corresponds to the name of the user's repository.
    * 
-   * @param file - The file to search
+   * @param path - The file's path to search
    * @return All subfiles of this {@code file}
    * @throws IOException
    */
-  public static List<WrappedFile> getSubfiles(File file) throws IOException {
-    return getSubfiles(file, new ArrayList<>());
+  public static List<WrappedFile> getSubfiles(Path path) throws IOException {
+    return getSubfiles(path, new ArrayList<>());
   }
 
-  private static List<WrappedFile> getSubfiles(File file, List<WrappedFile> subfiles)
+  private static List<WrappedFile> getSubfiles(Path path, List<WrappedFile> subfiles)
       throws IOException {
-    if (file.isDirectory()) {
+    if (Files.isDirectory(path)) {
       // verify if it's a directory that is a representation of a file in the server's repository
-      if (ServerRepoEnvironmentResolver.isVersioned(file.toPath())) {
-        WrappedFile wrappedFile = getFile(file);
+      if (ServerRepoEnvironmentResolver.isVersioned(path)) {
+        WrappedFile wrappedFile = getFile(path);
         subfiles.add(wrappedFile);
       }
       // it's a common directory
       else {
-        for (File subfile : file.listFiles()) {
+        List<Path> contentDirectory = Files.list(path).collect(Collectors.toList());
+        for (Path subfile : contentDirectory) {
           getSubfiles(subfile, subfiles);
         }
       }
@@ -87,48 +93,51 @@ public class RepositoryManager {
     // else, it's a file
     else {
       // must be a versioned file
-      if (ServerRepoEnvironmentResolver.isVersioned(file.toPath())) {
-        WrappedFile wrappedFile = parseFile(file);
+      if (ServerRepoEnvironmentResolver.isVersioned(path)) {
+        WrappedFile wrappedFile = parseFile(path);
         subfiles.add(wrappedFile);
       }
     }
     return subfiles;
   }
 
-  private static WrappedFile parseFile(File file) {
-    Path directory = file.toPath();
-    if (!file.isDirectory()) {
-      directory = directory.getParent();
-    }
-    Path unversionedPath = ServerRepoEnvironmentResolver.getUnversionedFilename(file.toPath());
-    return new WrappedFile(file, unversionedPath);
+  private static WrappedFile parseFile(Path path) {
+
+    // if (!Files.isDirectory(path)) {
+    //
+    // }
+    // Path directory = path.toPath();
+    // if (!path.isDirectory()) {
+    // directory = directory.getParent();
+    // }
+    Path unversionedPath = ServerRepoEnvironmentResolver.getUnversionedFilename(path);
+    return new WrappedFile(path, unversionedPath);
   }
 
   /**
    * Get latest version of a file
    * 
-   * @param file - A representation of a file in the server's repository
+   * @param path - A representation of a file in the server's repository
    * @return
    * @throws IOException
    */
-  public static WrappedFile getFile(File file)
-      throws IOException/* , NotPathToAServerFileException */ {
-    return getFile(file, -1);
+  public static WrappedFile getFile(Path path) throws IOException {
+    return getFile(path, -1);
   }
 
   /**
    * Get specific version of a file
    * 
-   * @param file - A representation of a file in the server's repository
+   * @param path - A representation of a file in the server's repository
    * @param version - The desired version of the file
    * @return
    * @throws IOException
    */
-  public static WrappedFile getFile(File file, int version) throws IOException {
+  public static WrappedFile getFile(Path path, int version) throws IOException {
     // file HAS to be a directory in format. dir1/dir2.../filename#extension/
 
     ServerRepoEnvironmentResolver serverRepoEnvironmentResolver =
-        new ServerRepoEnvironmentResolver(file.toPath());
+        new ServerRepoEnvironmentResolver(path);
     int latestVersion = serverRepoEnvironmentResolver.getLatestVersion();
     if (version == -1) {
       // set search for the latest version
@@ -138,9 +147,11 @@ public class RepositoryManager {
       throw new VersionGreaterThanLatestVersionException(
           String.format("Version %s bigger than the latest version %s", version, latestVersion));
     }
-    File content = new File(serverRepoEnvironmentResolver.getVersionedPath(version).toString());
-    Path destination = ServerRepoEnvironmentResolver.getUnversionedFilename(content.toPath());
-    return new WrappedFile(content, destination);
+    Path content = serverRepoEnvironmentResolver.getVersionedPath(version);
+    WrappedFile wrappedFile = parseFile(content);
+    return wrappedFile;
+//    Path destination = ServerRepoEnvironmentResolver.getUnversionedFilename(content);
+//    return new WrappedFile(content, destination);
   }
 
 }

@@ -1,6 +1,5 @@
 package com.ed.repository.filesystem;
 
-import java.io.File;
 import java.nio.file.Path;
 import java.util.Objects;
 
@@ -13,20 +12,20 @@ import java.util.Objects;
  */
 public class WrappedFile {
 
-  private File content;
+  private Path content;
   private Path destination;
 
   /**
    * @param content A file
    * @param destination Where the content should be saved
    */
-  public WrappedFile(File content, Path destination) {
+  public WrappedFile(Path content, Path destination) {
     super();
     this.content = content;
     this.destination = destination;
   }
 
-  public File getContent() {
+  public Path getContent() {
     return content;
   }
 

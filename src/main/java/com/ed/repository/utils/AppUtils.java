@@ -1,29 +1,21 @@
 package com.ed.repository.utils;
 
-import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class AppUtils {
 
-  /*
-   * from https://www.programiz.com/java-programming/examples/delete-directory
-   * 
-   */
-  public static void deleteDirectory(File directory) {
-
-    // if the file is directory or not
-    if (directory.isDirectory()) {
-      File[] files = directory.listFiles();
-
-      // if the directory contains any file
-      if (files != null) {
-        for (File file : files) {
-
-          // recursive call if the subdirectory is non-empty
-          deleteDirectory(file);
-        }
+  public static void deleteDirectory(Path directory) throws IOException {
+    List<Path> allContents = Files.list(directory).collect(Collectors.toList());
+    if (allContents != null) {
+      for (Path path : allContents) {
+        deleteDirectory(path);
       }
     }
-    directory.delete();
+    Files.delete(directory);
   }
 
 }
