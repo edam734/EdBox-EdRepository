@@ -1,16 +1,13 @@
 package com.ed.repository.filesystem;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.CopyOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.attribute.FileAttribute;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import com.ed.repository.exceptions.VersionGreaterThanLatestVersionException;
 
 public class RepositoryManager {
@@ -102,14 +99,6 @@ public class RepositoryManager {
   }
 
   private static WrappedFile parseFile(Path path) {
-
-    // if (!Files.isDirectory(path)) {
-    //
-    // }
-    // Path directory = path.toPath();
-    // if (!path.isDirectory()) {
-    // directory = directory.getParent();
-    // }
     Path unversionedPath = ServerRepoEnvironmentResolver.getUnversionedFilename(path);
     return new WrappedFile(path, unversionedPath);
   }
@@ -150,8 +139,6 @@ public class RepositoryManager {
     Path content = serverRepoEnvironmentResolver.getVersionedPath(version);
     WrappedFile wrappedFile = parseFile(content);
     return wrappedFile;
-//    Path destination = ServerRepoEnvironmentResolver.getUnversionedFilename(content);
-//    return new WrappedFile(content, destination);
   }
 
 }
