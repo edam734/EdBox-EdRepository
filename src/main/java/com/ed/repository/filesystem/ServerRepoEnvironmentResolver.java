@@ -225,11 +225,11 @@ public class ServerRepoEnvironmentResolver {
    * @return a new path in the client's repository for this file
    * @throws TransformPathException if something's wrong with the argument path
    */
-  public Path repositoryFormatToPathClientFormat(String repositoryFormatPath) {
+  public Path repositoryFormatToPathClientFormat(Path repositoryFormatPath) {
     String regex =
         "^(.*\\/(?=[^#]*#))([^\\/]*[#][^\\/]*)(\\/[^\\/]*)$".replace("/", File.separator);
     Pattern pattern = Pattern.compile(regex);
-    Matcher matcher = pattern.matcher(repositoryFormatPath);
+    Matcher matcher = pattern.matcher(repositoryFormatPath.toString().replace("/", File.separator));
     boolean matches = matcher.matches();
 
     if (matches) {
