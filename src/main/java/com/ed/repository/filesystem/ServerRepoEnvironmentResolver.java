@@ -195,7 +195,7 @@ public class ServerRepoEnvironmentResolver {
    * @return a new path in the server's repository for this file
    * @throws TransformPathException if something's wrong with the argument path
    */
-  public Path clientFormatToRepositoryFormatPath(Path clientFormatPath, int version) {
+  public static Path clientFormatToRepositoryFormatPath(Path clientFormatPath, int version) {
     if (clientFormatPath.toString().contains("#")) {
       throw new TransformPathException("Client path contains marker '#'");
     }
@@ -225,7 +225,7 @@ public class ServerRepoEnvironmentResolver {
    * @return a new path in the client's repository for this file
    * @throws TransformPathException if something's wrong with the argument path
    */
-  public Path repositoryFormatToPathClientFormat(Path repositoryFormatPath) {
+  public static Path repositoryFormatToPathClientFormat(Path repositoryFormatPath) {
     String regex =
         "^(.*\\/(?=[^#]*#))([^\\/]*[#][^\\/]*)(\\/[^\\/]*)$".replace("/", File.separator);
     Pattern pattern = Pattern.compile(regex);
