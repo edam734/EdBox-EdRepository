@@ -232,7 +232,7 @@ public class ServerRepoEnvironmentResolver {
     Matcher matcher = pattern.matcher(repositoryFormatPath.toString().replace("/", File.separator));
     boolean matches = matcher.matches();
 
-    if (matches) {
+    if (!matches) {
       throw new TransformPathException("The server's path syntax is invalid");
     }
     String path = matcher.group(1);
