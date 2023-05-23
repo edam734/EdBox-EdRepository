@@ -10,7 +10,7 @@ import java.util.Objects;
  * @author Eduardo Amorim
  *
  */
-public class WrappedFile {
+public class Pack {
 
   private Path content;
   private Path destination;
@@ -19,7 +19,7 @@ public class WrappedFile {
    * @param content A file
    * @param destination Where the content should be saved
    */
-  public WrappedFile(Path content, Path destination) {
+  public Pack(Path content, Path destination) {
     super();
     this.content = content;
     this.destination = destination;
@@ -50,7 +50,7 @@ public class WrappedFile {
       return false;
     if (getClass() != obj.getClass())
       return false;
-    WrappedFile other = (WrappedFile) obj;
+    Pack other = (Pack) obj;
     return Objects.equals(content, other.content) && Objects.equals(destination, other.destination);
   }
 
