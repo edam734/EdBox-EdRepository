@@ -9,6 +9,7 @@ import java.io.OutputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.CopyOption;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -21,11 +22,42 @@ public class ServerRepoEnvironmentResolver {
   final static Charset ENCODING = StandardCharsets.UTF_8;
 
   final static String MARK = "#";
+  final static int START_VERSION = 0;
 
   private String extension;
   private String filename;
   private Path directory;
   private Path indexFile;
+
+  public static boolean createFile(final InputStream in, Path path, final String username,
+      CopyOption... options) throws IOException {
+    FileResolver fileResolver = new FileResolver(path);
+
+    // create repository directory (if doesn't exist)
+    Path directory = fileResolver.getRepositoryDirectoryPath();
+    boolean wasDirectoryCreated = ServerRepoEnvironmentResolver.createDirectory(directory);
+    if (!wasDirectoryCreated) {
+      return false;
+    }
+    // write new entry in repository index file
+    Path indexFile2 = fileResolver.getIndexFile();
+    createFile(indexFile2);
+    int latestVersion = fileResolver.getLatestVersion();
+    FileEntry.writeEntry(indexFile2, latestVersion, username);
+
+    // write content in repository file
+    Path target = fileResolver.getRepositoryFilePath();
+    boolean suceess = Files.copy(in, target, options) > 0;
+    return suceess;
+  }
+
+  private static void createFile(Path path) throws IOException {
+    try {
+      Files.createFile(path);
+    } catch (FileAlreadyExistsException e) {
+      // does nothing
+    }
+  }
 
   /**
    * @requires path is a file
@@ -88,14 +120,14 @@ public class ServerRepoEnvironmentResolver {
    * local file in a single line of code.
    * 
    */
-  public boolean createFileNewVersion(final InputStream in, String username, CopyOption... options)
-      throws IOException {
-    writeIndexFileNewEntry(username);
-    Path target = getLastestVersionedPath();
-    // write the new file's version
-    boolean suceess = Files.copy(in, target, options) > 0;
-    return suceess;
-  }
+//  public boolean createFileNewVersion(final InputStream in, String username, CopyOption... options)
+//      throws IOException {
+//    writeNewEntryInIndexFile(username);
+//    Path target = getLastestVersionedPath();
+//    // write the new file's version
+//    boolean suceess = Files.copy(in, target, options) > 0;
+//    return suceess;
+//  }
 
   public Path getLastestVersionedPath() throws IOException {
     return getVersionedPath(getLatestVersion());
@@ -116,18 +148,18 @@ public class ServerRepoEnvironmentResolver {
     return Integer.parseInt(lastLine.split(" : ")[0]);
   }
 
-  private void writeIndexFileNewEntry(String username) throws IOException {
-    boolean alreadyExists = Files.exists(this.indexFile);
-    // append to an existing file, create file if it doesn't initially exist
-    try (OutputStream outputStream = Files.newOutputStream(this.indexFile, CREATE, APPEND)) {
-      if (alreadyExists) {
-        outputStream.write(System.lineSeparator().getBytes()); // new line before append
-      }
-      int latestVersion = this.getLatestVersion();
-      String entry = String.format("%d%s%s", ++latestVersion, " : ", username);
-      outputStream.write(entry.getBytes(ENCODING));
-    }
-  }
+//  private void writeNewEntryInIndexFile(String username) throws IOException {
+//    boolean alreadyExists = Files.exists(this.indexFile);
+//    // append to an existing file, create file if it doesn't initially exist
+//    try (OutputStream outputStream = Files.newOutputStream(this.indexFile, CREATE, APPEND)) {
+//      if (alreadyExists) {
+//        outputStream.write(System.lineSeparator().getBytes()); // new line before append
+//      }
+//      int latestVersion = this.getLatestVersion();
+//      String entry = String.format("%d%s%s", ++latestVersion, " : ", username);
+//      outputStream.write(entry.getBytes(ENCODING));
+//    }
+//  }
 
 
   /**
@@ -184,6 +216,25 @@ public class ServerRepoEnvironmentResolver {
     // dir1/dir2.../filename.TXT
     else {
       return path;
+    }
+  }
+
+  /**
+   * Creates a new directory if it does not already exist.
+   * 
+   * @param path - A path to a directory
+   * @requires Files.isDirectory(path)
+   * @return true if there's a directory of this file's path
+   * @throws IOException
+   */
+  public static boolean createDirectory(Path path) throws IOException {
+    if (Files.exists(path)) {
+      return true;
+    } else {
+      if (Files.createDirectories(path) != null) {
+        return true;
+      }
+      return false;
     }
   }
 

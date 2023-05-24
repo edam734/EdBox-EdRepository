@@ -18,49 +18,44 @@ public class DiskRepositoryManager extends RepositoryManager {
    * the uploader's name of this version, and update the file's name version
    * 
    * @param in The input stream that carries the data
-   * @param clientFile The path to convert into a new versioning repo
+   * @param path The path to convert into a new versioning repo
    * @param username who uploaded this file
    * @param options Some copy options
    * @return true if was successful
    * @throws RepositoryManagementException
    */
-  public boolean put(final InputStream in, Path clientFile, final String username,
-      CopyOption... options) throws RepositoryManagementException {
-
-    ServerRepoEnvironmentResolver serverRepoEnvironmentResolver =
-        new ServerRepoEnvironmentResolver(clientFile);
-    final Path fileVersionsFolder = serverRepoEnvironmentResolver.getDirectory();
-
+  public boolean put(final InputStream in, Path path, final String username, CopyOption... options)
+      throws RepositoryManagementException {
     try {
-      boolean wasDirectoryCreated = makeDirectory(fileVersionsFolder);
-      if (!wasDirectoryCreated) {
-        return false;
-      }
-      return serverRepoEnvironmentResolver.createFileNewVersion(in, username, options);
+      boolean wasCreated = ServerRepoEnvironmentResolver.createFile(in, path, username, options);
+      return wasCreated;
     } catch (IOException e) {
-      throw new RepositoryManagementException(e.getMessage());
+      System.out.println(e.getMessage());
+      throw new RepositoryManagementException(e.getLocalizedMessage());
     }
   }
 
-  /**
-   * Creates a new directory if it does not already exist.
-   * 
-   * @param path - A path to a directory
-   * @requires Files.isDirectory(path)
-   * @return true if there's a directory of this file's path
-   * @throws IOException
-   */
-  public static boolean makeDirectory(Path path) throws IOException {
-    if (Files.exists(path)) {
-      return true;
-    } else {
-      if (Files.createDirectories(path) != null) {
-        return true;
-      }
-      return false;
-    }
-  }
-
+  // public boolean put(final InputStream in, Path clientFile, final String username,
+  // CopyOption... options) throws RepositoryManagementException {
+  //
+  // ServerRepoEnvironmentResolver serverRepoEnvironmentResolver =
+  // new ServerRepoEnvironmentResolver(clientFile);
+  // final Path fileVersionsFolder = serverRepoEnvironmentResolver.getDirectory();
+  //
+  // try {
+  // boolean wasDirectoryCreated =
+  // ServerRepoEnvironmentResolver.createDirectory(fileVersionsFolder);
+  // if (!wasDirectoryCreated) {
+  // return false;
+  // }
+  //// return serverRepoEnvironmentResolver.createFileNewVersion(in, username, options);
+  // boolean wasCreated = ServerRepoEnvironmentResolver.createFile(in, fileVersionsFolder, username,
+  // options);
+  // return wasCreated;
+  // } catch (IOException e) {
+  // throw new RepositoryManagementException(e.getMessage());
+  // }
+  // }
 
   /**
    * Returns all subfiles of this {@code file} with the name adapted to go to the user.
@@ -84,14 +79,14 @@ public class DiskRepositoryManager extends RepositoryManager {
     if (Files.isDirectory(path)) {
       // verify if it's a directory that is a representation of a file in the server's repository
       if (ServerRepoEnvironmentResolver.isVersioned(path)) {
-        Pack wrappedFile = getFile(path);
-        subfiles.add(wrappedFile);
+        Pack pack = getFile(path);
+        subfiles.add(pack);
       }
       // it's a common directory
       else {
         List<Path> contentDirectory = Files.list(path).collect(Collectors.toList());
-        for (Path subfile : contentDirectory) {
-          get(subfile, subfiles);
+        for (Path subpaths : contentDirectory) {
+          get(subpaths, subfiles);
         }
       }
     }
@@ -99,8 +94,8 @@ public class DiskRepositoryManager extends RepositoryManager {
     else {
       // must be a versioned file
       if (ServerRepoEnvironmentResolver.isVersioned(path)) {
-        Pack wrappedFile = parseFile(path);
-        subfiles.add(wrappedFile);
+        Pack pack = parseFile(path);
+        subfiles.add(pack);
       }
     }
     return subfiles;
@@ -145,8 +140,8 @@ public class DiskRepositoryManager extends RepositoryManager {
           String.format("Version %s bigger than the latest version %s", version, latestVersion));
     }
     Path content = serverRepoEnvironmentResolver.getVersionedPath(version);
-    Pack wrappedFile = parseFile(content);
-    return wrappedFile;
+    Pack pack = parseFile(content);
+    return pack;
   }
 
   @Override
