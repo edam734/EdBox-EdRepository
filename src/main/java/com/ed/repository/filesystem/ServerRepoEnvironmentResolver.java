@@ -1,11 +1,8 @@
 package com.ed.repository.filesystem;
 
-import static java.nio.file.StandardOpenOption.APPEND;
-import static java.nio.file.StandardOpenOption.CREATE;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.CopyOption;
@@ -22,7 +19,6 @@ public class ServerRepoEnvironmentResolver {
   final static Charset ENCODING = StandardCharsets.UTF_8;
 
   final static String MARK = "#";
-  final static int START_VERSION = 0;
 
   private String extension;
   private String filename;
@@ -40,10 +36,10 @@ public class ServerRepoEnvironmentResolver {
       return false;
     }
     // write new entry in repository index file
-    Path indexFile2 = fileResolver.getIndexFile();
-    createFile(indexFile2);
-    int latestVersion = fileResolver.getLatestVersion();
-    FileEntry.writeEntry(indexFile2, latestVersion, username);
+    Path indexFilePath = fileResolver.getIndexFilePath();
+    createFileLazily(indexFilePath);
+    int version = fileResolver.getNextVersion();
+    IndexFileEntry.writeEntry(indexFilePath, version, username);
 
     // write content in repository file
     Path target = fileResolver.getRepositoryFilePath();
@@ -51,11 +47,16 @@ public class ServerRepoEnvironmentResolver {
     return suceess;
   }
 
-  private static void createFile(Path path) throws IOException {
+  /**
+   * Creates a file only if it doesn't exist. Else, do nothing
+   * 
+   * @param path - the path to the new file
+   * @throws IOException if an I/O error occurs or the parent directory does not exist
+   */
+  private static void createFileLazily(Path path) throws IOException {
     try {
       Files.createFile(path);
     } catch (FileAlreadyExistsException e) {
-      // does nothing
     }
   }
 
@@ -120,14 +121,15 @@ public class ServerRepoEnvironmentResolver {
    * local file in a single line of code.
    * 
    */
-//  public boolean createFileNewVersion(final InputStream in, String username, CopyOption... options)
-//      throws IOException {
-//    writeNewEntryInIndexFile(username);
-//    Path target = getLastestVersionedPath();
-//    // write the new file's version
-//    boolean suceess = Files.copy(in, target, options) > 0;
-//    return suceess;
-//  }
+  // public boolean createFileNewVersion(final InputStream in, String username, CopyOption...
+  // options)
+  // throws IOException {
+  // writeNewEntryInIndexFile(username);
+  // Path target = getLastestVersionedPath();
+  // // write the new file's version
+  // boolean suceess = Files.copy(in, target, options) > 0;
+  // return suceess;
+  // }
 
   public Path getLastestVersionedPath() throws IOException {
     return getVersionedPath(getLatestVersion());
@@ -148,18 +150,18 @@ public class ServerRepoEnvironmentResolver {
     return Integer.parseInt(lastLine.split(" : ")[0]);
   }
 
-//  private void writeNewEntryInIndexFile(String username) throws IOException {
-//    boolean alreadyExists = Files.exists(this.indexFile);
-//    // append to an existing file, create file if it doesn't initially exist
-//    try (OutputStream outputStream = Files.newOutputStream(this.indexFile, CREATE, APPEND)) {
-//      if (alreadyExists) {
-//        outputStream.write(System.lineSeparator().getBytes()); // new line before append
-//      }
-//      int latestVersion = this.getLatestVersion();
-//      String entry = String.format("%d%s%s", ++latestVersion, " : ", username);
-//      outputStream.write(entry.getBytes(ENCODING));
-//    }
-//  }
+  // private void writeNewEntryInIndexFile(String username) throws IOException {
+  // boolean alreadyExists = Files.exists(this.indexFile);
+  // // append to an existing file, create file if it doesn't initially exist
+  // try (OutputStream outputStream = Files.newOutputStream(this.indexFile, CREATE, APPEND)) {
+  // if (alreadyExists) {
+  // outputStream.write(System.lineSeparator().getBytes()); // new line before append
+  // }
+  // int latestVersion = this.getLatestVersion();
+  // String entry = String.format("%d%s%s", ++latestVersion, " : ", username);
+  // outputStream.write(entry.getBytes(ENCODING));
+  // }
+  // }
 
 
   /**

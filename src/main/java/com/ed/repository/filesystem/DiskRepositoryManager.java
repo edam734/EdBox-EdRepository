@@ -17,10 +17,10 @@ public class DiskRepositoryManager extends RepositoryManager {
    * Place a new file in the appropriate location on the server, write to the ".index.txt" file with
    * the uploader's name of this version, and update the file's name version
    * 
-   * @param in The input stream that carries the data
-   * @param path The path to convert into a new versioning repo
-   * @param username who uploaded this file
-   * @param options Some copy options
+   * @param in - the input stream that carries the data
+   * @param path - the file's path of the client
+   * @param username - who uploaded this file
+   * @param options - some copy options
    * @return true if was successful
    * @throws RepositoryManagementException
    */
@@ -30,32 +30,9 @@ public class DiskRepositoryManager extends RepositoryManager {
       boolean wasCreated = ServerRepoEnvironmentResolver.createFile(in, path, username, options);
       return wasCreated;
     } catch (IOException e) {
-      System.out.println(e.getMessage());
-      throw new RepositoryManagementException(e.getLocalizedMessage());
+      throw new RepositoryManagementException(e.getMessage());
     }
   }
-
-  // public boolean put(final InputStream in, Path clientFile, final String username,
-  // CopyOption... options) throws RepositoryManagementException {
-  //
-  // ServerRepoEnvironmentResolver serverRepoEnvironmentResolver =
-  // new ServerRepoEnvironmentResolver(clientFile);
-  // final Path fileVersionsFolder = serverRepoEnvironmentResolver.getDirectory();
-  //
-  // try {
-  // boolean wasDirectoryCreated =
-  // ServerRepoEnvironmentResolver.createDirectory(fileVersionsFolder);
-  // if (!wasDirectoryCreated) {
-  // return false;
-  // }
-  //// return serverRepoEnvironmentResolver.createFileNewVersion(in, username, options);
-  // boolean wasCreated = ServerRepoEnvironmentResolver.createFile(in, fileVersionsFolder, username,
-  // options);
-  // return wasCreated;
-  // } catch (IOException e) {
-  // throw new RepositoryManagementException(e.getMessage());
-  // }
-  // }
 
   /**
    * Returns all subfiles of this {@code file} with the name adapted to go to the user.

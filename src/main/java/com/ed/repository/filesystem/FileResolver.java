@@ -11,8 +11,8 @@ public class FileResolver {
 
   private Path repositoryDirectoryPath = null;
   private Path repositoryFilePath = null;
-  private Path indexFile = null;
-  private int latestVersion = -1;
+  private Path indexFilePath = null;
+  private int nextVersion = -1;
 
   public FileResolver(Path path) throws IOException {
     resolve(path);
@@ -34,11 +34,10 @@ public class FileResolver {
     String filename = matcher.group(2);
     String extension = matcher.group(3);
 
-    this.indexFile = buildPathToIndexFile(path, filename, extension);
-    this.latestVersion = getLatestVersion();
+    this.indexFilePath = buildPathToIndexFile(path, filename, extension);
+    this.nextVersion = getNextVersion();
     this.repositoryDirectoryPath = buildPathToRepositoryDirectoryPath(path, filename, extension);
-    this.repositoryFilePath =
-        buildPathToRepositoryFilePath(path, filename, extension, latestVersion);
+    this.repositoryFilePath = buildPathToRepositoryFilePath(path, filename, extension, nextVersion);
   }
 
   private static Path buildPathToRepositoryDirectoryPath(String path, String filename,
@@ -70,16 +69,16 @@ public class FileResolver {
     return repositoryFilePath;
   }
 
-  public Path getIndexFile() {
-    return indexFile;
+  public Path getIndexFilePath() {
+    return indexFilePath;
   }
 
-  public int getLatestVersion() throws IOException {
-    if (latestVersion == -1) {
-      FileEntry readEntry = FileEntry.readEntry(this.indexFile);
-      int latest = readEntry.getKey();
-      return ++latest;
+  public int getNextVersion() throws IOException {
+    if (nextVersion == -1) {
+      IndexFileEntry lastEntry = IndexFileEntry.readEntry(this.indexFilePath);
+      int latestVersion = lastEntry.getKey();
+      return ++latestVersion; // the next version is 1 up from the latest one in the archive
     }
-    return latestVersion;
+    return nextVersion;
   }
 }
