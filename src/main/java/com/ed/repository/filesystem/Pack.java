@@ -56,7 +56,7 @@ public class Pack {
 
   @Override
   public String toString() {
-    return "WrappedFile [content=" + content + ", destination=" + destination + "]";
+    return "Pack [content=" + content + ", destination=" + destination + "]";
   }
 
 }

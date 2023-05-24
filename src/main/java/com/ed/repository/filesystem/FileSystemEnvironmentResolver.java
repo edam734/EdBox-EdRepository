@@ -15,9 +15,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import com.ed.repository.exceptions.TransformPathException;
 
-public class ServerRepoEnvironmentResolver {
+public class FileSystemEnvironmentResolver {
+  
   final static Charset ENCODING = StandardCharsets.UTF_8;
-
   final static String MARK = "#";
 
   private String extension;
@@ -29,19 +29,19 @@ public class ServerRepoEnvironmentResolver {
       CopyOption... options) throws IOException {
     FileResolver fileResolver = new FileResolver(path);
 
-    // create repository directory (if doesn't exist)
-    Path directory = fileResolver.getRepositoryDirectoryPath();
-    boolean wasDirectoryCreated = ServerRepoEnvironmentResolver.createDirectory(directory);
+    // create repository's directory (if doesn't exist)
+    Path repoDir = fileResolver.getRepositoryDirectoryPath();
+    boolean wasDirectoryCreated = FileSystemEnvironmentResolver.createDirectory(repoDir);
     if (!wasDirectoryCreated) {
       return false;
     }
-    // write new entry in repository index file
+    // write new entry in index file
     Path indexFilePath = fileResolver.getIndexFilePath();
     createFileLazily(indexFilePath);
     int version = fileResolver.getNextVersion();
     IndexFileEntry.writeEntry(indexFilePath, version, username);
 
-    // write content in repository file
+    // write content in repository's file
     Path target = fileResolver.getRepositoryFilePath();
     boolean suceess = Files.copy(in, target, options) > 0;
     return suceess;
@@ -65,7 +65,7 @@ public class ServerRepoEnvironmentResolver {
    * 
    * @param path
    */
-  public ServerRepoEnvironmentResolver(Path path) {
+  public FileSystemEnvironmentResolver(Path path) {
     if (isVersioned(path)) {
       path = getUnversionedFilename(path);
     }
@@ -73,7 +73,7 @@ public class ServerRepoEnvironmentResolver {
   }
 
   public static boolean isVersioned(Path path) {
-    return path.toFile().getAbsolutePath().contains(ServerRepoEnvironmentResolver.MARK);
+    return path.toFile().getAbsolutePath().contains(FileSystemEnvironmentResolver.MARK);
   }
 
   public Path getDirectory() {

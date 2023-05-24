@@ -17,14 +17,14 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.springframework.util.ResourceUtils;
 import com.ed.repository.exceptions.VersionGreaterThanLatestVersionException;
-import com.ed.repository.filesystem.DiskRepositoryManager;
-import com.ed.repository.filesystem.ServerRepoEnvironmentResolver;
+import com.ed.repository.filesystem.FileSystemRepositoryManager;
+import com.ed.repository.filesystem.FileSystemEnvironmentResolver;
 import com.ed.repository.filesystem.Pack;
 import com.ed.repository.filesystem.RepositoryManager;
 import com.ed.repository.utils.AppUtils;
 
 @TestInstance(Lifecycle.PER_CLASS)
-public class RepositoryManagerTest {
+public class FileSystemRepositoryManagerTest {
 
   static final String INPUT_LOCATION = "repo/".replace("/", File.separator);
 
@@ -55,7 +55,7 @@ public class RepositoryManagerTest {
 
     InputStream inStream = new FileInputStream(file.toString());
 
-    RepositoryManager repositoryManager = new DiskRepositoryManager();
+    RepositoryManager repositoryManager = new FileSystemRepositoryManager();
     boolean result =
         repositoryManager.put(inStream, Path.of(OUTPUT_TEST_1, file.toString()), "edam734");
 
@@ -89,7 +89,7 @@ public class RepositoryManagerTest {
 
     Path file = ResourceUtils.getFile(INPUT_LOCATION + "test2.TXT").toPath();
 
-    RepositoryManager repositoryManager = new DiskRepositoryManager();
+    RepositoryManager repositoryManager = new FileSystemRepositoryManager();
     boolean result1 = repositoryManager.put(new FileInputStream(file.toString()),
         Path.of(OUTPUT_TEST_2, file.toString()), "maria");
     Assertions.assertTrue(result1);
@@ -130,7 +130,7 @@ public class RepositoryManagerTest {
   public void testGetAllSubfiles_edam734Repo() throws IOException {
     Path directory = ResourceUtils.getFile(INPUT_LOCATION + "edam734").toPath();
 
-    RepositoryManager repositoryManager = new DiskRepositoryManager();
+    RepositoryManager repositoryManager = new FileSystemRepositoryManager();
     List<Pack> files = repositoryManager.get(directory);
 
     Assertions.assertEquals(2, files.size());
@@ -151,7 +151,7 @@ public class RepositoryManagerTest {
   @Test
   public void testGetAllSubfiles_butInputIsAFile() throws IOException {
     Path file = ResourceUtils.getFile(INPUT_LOCATION + "edam734/test2#TXT/test2-v1.TXT").toPath();
-    RepositoryManager repositoryManager = new DiskRepositoryManager();
+    RepositoryManager repositoryManager = new FileSystemRepositoryManager();
     List<Pack> files = repositoryManager.get(file);
 
     Assertions.assertEquals(1, files.size());
@@ -169,10 +169,10 @@ public class RepositoryManagerTest {
   public void testGetLatestFileVersion() throws IOException {
     Path directory = ResourceUtils
         .getFile(INPUT_LOCATION + "edam734/test2#TXT".replace("/", File.separator)).toPath();
-    Pack file = DiskRepositoryManager.getFile(directory);
+    Pack file = FileSystemRepositoryManager.getFile(directory);
 
     // the latest version is 3
-    Assertions.assertEquals(3, ServerRepoEnvironmentResolver
+    Assertions.assertEquals(3, FileSystemEnvironmentResolver
         .getVersionFromFilename(file.getContent().getFileName().toString()));
   }
 
@@ -181,9 +181,9 @@ public class RepositoryManagerTest {
     Path directory = ResourceUtils
         .getFile(INPUT_LOCATION + "edam734/test2#TXT".replace("/", File.separator)).toPath();
     int wantedVersion = 2;
-    Pack file = DiskRepositoryManager.getFile(directory, wantedVersion);
+    Pack file = FileSystemRepositoryManager.getFile(directory, wantedVersion);
 
-    Assertions.assertEquals(wantedVersion, ServerRepoEnvironmentResolver
+    Assertions.assertEquals(wantedVersion, FileSystemEnvironmentResolver
         .getVersionFromFilename(file.getContent().getFileName().toString()));
   }
 
@@ -194,7 +194,7 @@ public class RepositoryManagerTest {
     // latest version is 3, so we ask for version 4
     VersionGreaterThanLatestVersionException exception =
         Assertions.assertThrows(VersionGreaterThanLatestVersionException.class,
-            () -> DiskRepositoryManager.getFile(directory, 4));
+            () -> FileSystemRepositoryManager.getFile(directory, 4));
     Assertions.assertEquals(String.format("Version %s bigger than the latest version %s", 4, 3),
         exception.getMessage());
   }
@@ -206,10 +206,10 @@ public class RepositoryManagerTest {
     String filename2 = "dir1/dir2/test-v4f-v67-v_-v#TXT/test-v4f-v67-v_-v wdwe-v2.TXT";
     String filename3 = "dir1/dir2/test#TXT/test-v2.TXT";
     String filename4 = "dir1/dir2/test_without_version#TXT/test_without_version.TXT";
-    Path actual1 = ServerRepoEnvironmentResolver.getUnversionedFilename(Paths.get(filename1));
-    Path actual2 = ServerRepoEnvironmentResolver.getUnversionedFilename(Paths.get(filename2));
-    Path actual3 = ServerRepoEnvironmentResolver.getUnversionedFilename(Paths.get(filename3));
-    Path actual4 = ServerRepoEnvironmentResolver.getUnversionedFilename(Paths.get(filename4));
+    Path actual1 = FileSystemEnvironmentResolver.getUnversionedFilename(Paths.get(filename1));
+    Path actual2 = FileSystemEnvironmentResolver.getUnversionedFilename(Paths.get(filename2));
+    Path actual3 = FileSystemEnvironmentResolver.getUnversionedFilename(Paths.get(filename3));
+    Path actual4 = FileSystemEnvironmentResolver.getUnversionedFilename(Paths.get(filename4));
 
     String expected1 = "dir1/dir2/test-v4f-vfs-v_-v.TXT".replace("/", File.separator);
     String expected2 = "dir1/dir2/test-v4f-v67-v_-v wdwe.TXT".replace("/", File.separator);
@@ -225,7 +225,7 @@ public class RepositoryManagerTest {
   @Test
   public void testGetUnversionedName_butInputIsADirectory() {
     String filename = "dir1/dir2/test#TXT";
-    Path actual = ServerRepoEnvironmentResolver.getUnversionedFilename(Paths.get(filename));
+    Path actual = FileSystemEnvironmentResolver.getUnversionedFilename(Paths.get(filename));
 
     String expected = "dir1/dir2/test.txt".replace("/", File.separator);
     Assertions.assertEquals(expected, actual.toString());
@@ -234,7 +234,7 @@ public class RepositoryManagerTest {
   @Test
   public void testGetUnversionedName_butAlreadyUnversioned() {
     String filename = "dir1/dir2/test.TXT";
-    Path actual = ServerRepoEnvironmentResolver.getUnversionedFilename(Paths.get(filename));
+    Path actual = FileSystemEnvironmentResolver.getUnversionedFilename(Paths.get(filename));
 
     String expected = "dir1/dir2/test.TXT".replace("/", File.separator);
     Assertions.assertEquals(expected, actual.toString());
@@ -243,7 +243,7 @@ public class RepositoryManagerTest {
   @Test
   public void testGetAllSubfiles_johnn50Repo() throws IOException {
     Path directory = ResourceUtils.getFile(INPUT_LOCATION + "johnny50").toPath();
-    RepositoryManager repositoryManager = new DiskRepositoryManager();
+    RepositoryManager repositoryManager = new FileSystemRepositoryManager();
     List<Pack> files = repositoryManager.get(directory);
 
     Assertions.assertEquals(2, files.size());
@@ -265,7 +265,7 @@ public class RepositoryManagerTest {
   public void testGetAllFilesDirectlyOfFolder() throws IOException {
     Path directory = ResourceUtils
         .getFile(INPUT_LOCATION + "johnny50/test2#TXT".replace("/", File.separator)).toPath();
-    RepositoryManager repositoryManager = new DiskRepositoryManager();
+    RepositoryManager repositoryManager = new FileSystemRepositoryManager();
     List<Pack> files = repositoryManager.get(directory);
 
     Pack wrappedFile =
@@ -281,7 +281,7 @@ public class RepositoryManagerTest {
     Path directory = ResourceUtils
         .getFile(INPUT_LOCATION + "johnny50/test2#TXT/test2-v1.TXT".replace("/", File.separator))
         .toPath();
-    RepositoryManager repositoryManager = new DiskRepositoryManager();
+    RepositoryManager repositoryManager = new FileSystemRepositoryManager();
     List<Pack> files = repositoryManager.get(directory);
 
     Pack wrappedFile =
@@ -295,7 +295,7 @@ public class RepositoryManagerTest {
   public void testGetAllFilesDirectlyOfAUnversionedFile() throws IOException {
     Path directory = ResourceUtils
         .getFile(INPUT_LOCATION + "steven123/test100.TXT".replace("/", File.separator)).toPath();
-    RepositoryManager repositoryManager = new DiskRepositoryManager();
+    RepositoryManager repositoryManager = new FileSystemRepositoryManager();
     List<Pack> files = repositoryManager.get(directory);
 
     // don't return unversioned files

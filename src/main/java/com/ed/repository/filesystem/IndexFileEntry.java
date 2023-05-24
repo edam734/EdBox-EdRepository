@@ -30,21 +30,18 @@ public class IndexFileEntry {
     // append to an existing file
     try (OutputStream outputStream = Files.newOutputStream(file, APPEND)) {
       String entry = String.format("%d%s%s", key, " : ", value);
-      outputStream.write(entry.getBytes(ServerRepoEnvironmentResolver.ENCODING));
-      outputStream.write(System.lineSeparator().getBytes());
+      byte[] bytes = entry.getBytes(FileSystemEnvironmentResolver.ENCODING);
+      outputStream.write(bytes);
+      outputStream.write(System.lineSeparator().getBytes()); // change line
     }
   }
 
   public static IndexFileEntry readEntry(Path file) throws IOException {
-    IndexFileEntry entry = null;
+    IndexFileEntry entry = new IndexFileEntry(0, null);
     boolean exists = Files.exists(file);
-    if (!exists) {
-      entry = new IndexFileEntry(0, null); // file's doesn't exist
-    } else {
+    if (exists) {
       List<String> lines = Files.readAllLines(file);
-      if (lines.size() == 0) {
-        entry = new IndexFileEntry(0, null); // file's empty
-      } else {
+      if (lines.size() != 0) {
         String lastLine = lines.get(lines.size() - 1);
         String[] parts = lastLine.split(" : ");
         int key = Integer.parseInt(parts[0]);

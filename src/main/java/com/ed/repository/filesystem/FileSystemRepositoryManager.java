@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
 import com.ed.repository.exceptions.RepositoryManagementException;
 import com.ed.repository.exceptions.VersionGreaterThanLatestVersionException;
 
-public class DiskRepositoryManager extends RepositoryManager {
+public class FileSystemRepositoryManager extends RepositoryManager {
 
   /**
    * Place a new file in the appropriate location on the server, write to the ".index.txt" file with
@@ -27,7 +27,7 @@ public class DiskRepositoryManager extends RepositoryManager {
   public boolean put(final InputStream in, Path path, final String username, CopyOption... options)
       throws RepositoryManagementException {
     try {
-      boolean wasCreated = ServerRepoEnvironmentResolver.createFile(in, path, username, options);
+      boolean wasCreated = FileSystemEnvironmentResolver.createFile(in, path, username, options);
       return wasCreated;
     } catch (IOException e) {
       throw new RepositoryManagementException(e.getMessage());
@@ -55,7 +55,7 @@ public class DiskRepositoryManager extends RepositoryManager {
   private static List<Pack> get(Path path, List<Pack> subfiles) throws IOException {
     if (Files.isDirectory(path)) {
       // verify if it's a directory that is a representation of a file in the server's repository
-      if (ServerRepoEnvironmentResolver.isVersioned(path)) {
+      if (FileSystemEnvironmentResolver.isVersioned(path)) {
         Pack pack = getFile(path);
         subfiles.add(pack);
       }
@@ -70,7 +70,7 @@ public class DiskRepositoryManager extends RepositoryManager {
     // else, it's a file
     else {
       // must be a versioned file
-      if (ServerRepoEnvironmentResolver.isVersioned(path)) {
+      if (FileSystemEnvironmentResolver.isVersioned(path)) {
         Pack pack = parseFile(path);
         subfiles.add(pack);
       }
@@ -79,7 +79,7 @@ public class DiskRepositoryManager extends RepositoryManager {
   }
 
   private static Pack parseFile(Path path) {
-    Path unversionedPath = ServerRepoEnvironmentResolver.getUnversionedFilename(path);
+    Path unversionedPath = FileSystemEnvironmentResolver.getUnversionedFilename(path);
     return new Pack(path, unversionedPath);
   }
 
@@ -105,8 +105,8 @@ public class DiskRepositoryManager extends RepositoryManager {
   public static Pack getFile(Path path, int version) throws IOException {
     // file HAS to be a directory in format. dir1/dir2.../filename#extension/
 
-    ServerRepoEnvironmentResolver serverRepoEnvironmentResolver =
-        new ServerRepoEnvironmentResolver(path);
+    FileSystemEnvironmentResolver serverRepoEnvironmentResolver =
+        new FileSystemEnvironmentResolver(path);
     int latestVersion = serverRepoEnvironmentResolver.getLatestVersion();
     if (version == -1) {
       // set search for the latest version
@@ -123,7 +123,7 @@ public class DiskRepositoryManager extends RepositoryManager {
 
   @Override
   public RepositoryManager createRepositoryManager() {
-    return new DiskRepositoryManager();
+    return new FileSystemRepositoryManager();
   }
 
 }
