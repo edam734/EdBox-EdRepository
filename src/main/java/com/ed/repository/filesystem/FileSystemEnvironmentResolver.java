@@ -13,10 +13,9 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import com.ed.repository.exceptions.TransformPathException;
 
 public class FileSystemEnvironmentResolver {
-  
+
   final static Charset ENCODING = StandardCharsets.UTF_8;
   final static String MARK = "#";
 
@@ -73,15 +72,7 @@ public class FileSystemEnvironmentResolver {
   }
 
   public static boolean isVersioned(Path path) {
-    return path.toFile().getAbsolutePath().contains(FileSystemEnvironmentResolver.MARK);
-  }
-
-  public Path getDirectory() {
-    return directory;
-  }
-
-  public Path getIndexFile() {
-    return indexFile;
+    return path.toFile().getAbsolutePath().contains(MARK);
   }
 
   /*
@@ -113,24 +104,6 @@ public class FileSystemEnvironmentResolver {
     return Paths.get(path.toString(), (name + ".index.txt"));
   }
 
-  /*
-   * As of Java 7, we have the Files class which contains helper methods to handle operations of
-   * I/O.
-   *
-   * We can use the Files.copy() method to read all bytes from an InputStream and copy them to a
-   * local file in a single line of code.
-   * 
-   */
-  // public boolean createFileNewVersion(final InputStream in, String username, CopyOption...
-  // options)
-  // throws IOException {
-  // writeNewEntryInIndexFile(username);
-  // Path target = getLastestVersionedPath();
-  // // write the new file's version
-  // boolean suceess = Files.copy(in, target, options) > 0;
-  // return suceess;
-  // }
-
   public Path getLastestVersionedPath() throws IOException {
     return getVersionedPath(getLatestVersion());
   }
@@ -149,20 +122,6 @@ public class FileSystemEnvironmentResolver {
     String lastLine = lines.get(lines.size() - 1);
     return Integer.parseInt(lastLine.split(" : ")[0]);
   }
-
-  // private void writeNewEntryInIndexFile(String username) throws IOException {
-  // boolean alreadyExists = Files.exists(this.indexFile);
-  // // append to an existing file, create file if it doesn't initially exist
-  // try (OutputStream outputStream = Files.newOutputStream(this.indexFile, CREATE, APPEND)) {
-  // if (alreadyExists) {
-  // outputStream.write(System.lineSeparator().getBytes()); // new line before append
-  // }
-  // int latestVersion = this.getLatestVersion();
-  // String entry = String.format("%d%s%s", ++latestVersion, " : ", username);
-  // outputStream.write(entry.getBytes(ENCODING));
-  // }
-  // }
-
 
   /**
    * Get the version number X of a string like this: folder1/folder2/.../filename-vX.extension
@@ -238,64 +197,6 @@ public class FileSystemEnvironmentResolver {
       }
       return false;
     }
-  }
-
-  // temp
-  /**
-   * "C:/a/b/.../filename.extension -> C:/a/b/.../filename#EXTENSION/filename-v{version}.extension"
-   * 
-   * @param clientFormatPath - the client file's path
-   * @return a new path in the server's repository for this file
-   * @throws TransformPathException if something's wrong with the argument path
-   */
-  public static Path clientFormatToRepositoryFormatPath(Path clientFormatPath, int version) {
-    if (clientFormatPath.toString().contains("#")) {
-      throw new TransformPathException("Client path contains marker '#'");
-    }
-    String regex = "^(.*\\/)(.*)([\\.*]\\S+)".replace("/", File.separator);
-    Pattern pattern = Pattern.compile(regex);
-    Matcher matcher = pattern.matcher(clientFormatPath.toString().replace("/", File.separator));
-    boolean matches = matcher.matches();
-
-    if (!matches) {
-      throw new TransformPathException("The client path is invalid");
-    }
-    String path = matcher.group(1);
-    String filename = matcher.group(2);
-    String extension = matcher.group(3);
-
-    String repositoryFormatPath =
-        String.format("%s%s%s%s%s%s%d%s", path, filename, extension.toUpperCase().replace(".", "#"),
-            File.separator, filename, "-v", version, extension);
-
-    return Path.of(repositoryFormatPath);
-  }
-
-  /**
-   * "C:/a/b/.../filename#EXTENSION/filename-v{version}.extension -> C:/a/b/.../filename.extension"
-   * 
-   * @param repositoryFormatPath - the server file's path
-   * @return a new path in the client's repository for this file
-   * @throws TransformPathException if something's wrong with the argument path
-   */
-  public static Path repositoryFormatToPathClientFormat(Path repositoryFormatPath) {
-    String regex =
-        "^(.*\\/(?=[^#]*#))([^\\/]*[#][^\\/]*)(\\/[^\\/]*)$".replace("/", File.separator);
-    Pattern pattern = Pattern.compile(regex);
-    Matcher matcher = pattern.matcher(repositoryFormatPath.toString().replace("/", File.separator));
-    boolean matches = matcher.matches();
-
-    if (!matches) {
-      throw new TransformPathException("The server's path syntax is invalid");
-    }
-    String path = matcher.group(1);
-    String versionedFilename = matcher.group(3);
-    String[] split = versionedFilename.split("-v\\d+");
-    String unversionedFilename = split[0].substring(1) + split[1];
-
-    String clientFormatPath = path + unversionedFilename;
-
-    return Path.of(clientFormatPath);
   }
 
 }

@@ -71,17 +71,13 @@ public class FileSystemRepositoryManager extends RepositoryManager {
     else {
       // must be a versioned file
       if (FileSystemEnvironmentResolver.isVersioned(path)) {
-        Pack pack = parseFile(path);
+        Pack pack = Pack.createPack(path);
         subfiles.add(pack);
       }
     }
     return subfiles;
   }
 
-  private static Pack parseFile(Path path) {
-    Path unversionedPath = FileSystemEnvironmentResolver.getUnversionedFilename(path);
-    return new Pack(path, unversionedPath);
-  }
 
   /**
    * Get latest version of a file
@@ -117,7 +113,7 @@ public class FileSystemRepositoryManager extends RepositoryManager {
           String.format("Version %s bigger than the latest version %s", version, latestVersion));
     }
     Path content = serverRepoEnvironmentResolver.getVersionedPath(version);
-    Pack pack = parseFile(content);
+    Pack pack = Pack.createPack(content);
     return pack;
   }
 

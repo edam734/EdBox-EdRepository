@@ -135,12 +135,12 @@ public class FileSystemRepositoryManagerTest {
 
     Assertions.assertEquals(2, files.size());
 
-    Pack wrappedFile1 =
-        new Pack(Paths.get("repo/edam734/test2#TXT/test2-v3.txt".replace("/", File.separator)),
-            Paths.get("repo/edam734/test2.txt".replace("/", File.separator)));
-    Pack wrappedFile2 =
-        new Pack(Paths.get("repo/edam734/test3#TXT/test3-v2.txt".replace("/", File.separator)),
-            Paths.get("repo/edam734/test3.txt".replace("/", File.separator)));
+    Pack wrappedFile1 = Pack.createPack(Paths.get("repo/edam734/test2#TXT/test2-v3.txt".replace("/", File.separator)));
+//        new Pack(Paths.get("repo/edam734/test2#TXT/test2-v3.txt".replace("/", File.separator)),
+//            Paths.get("repo/edam734/test2.txt".replace("/", File.separator)));
+    Pack wrappedFile2 = Pack.createPack(Paths.get("repo/edam734/test3#TXT/test3-v2.txt".replace("/", File.separator)));
+//        new Pack(Paths.get("repo/edam734/test3#TXT/test3-v2.txt".replace("/", File.separator)),
+//            Paths.get("repo/edam734/test3.txt".replace("/", File.separator)));
     List<Pack> expectedList = new ArrayList<>();
     expectedList.add(wrappedFile1);
     expectedList.add(wrappedFile2);
@@ -156,9 +156,9 @@ public class FileSystemRepositoryManagerTest {
 
     Assertions.assertEquals(1, files.size());
 
-    Pack wrappedFile =
-        new Pack(Paths.get("repo/edam734/test2#TXT/test2-v1.TXT".replace("/", File.separator)),
-            Paths.get("repo/edam734/test2.TXT".replace("/", File.separator)));
+    Pack wrappedFile = Pack.createPack(Paths.get("repo/edam734/test2#TXT/test2-v1.TXT".replace("/", File.separator)));
+//        new Pack(Paths.get("repo/edam734/test2#TXT/test2-v1.TXT".replace("/", File.separator)),
+//            Paths.get("repo/edam734/test2.TXT".replace("/", File.separator)));
     List<Pack> expectedList = new ArrayList<>();
     expectedList.add(wrappedFile);
 
@@ -248,12 +248,13 @@ public class FileSystemRepositoryManagerTest {
 
     Assertions.assertEquals(2, files.size());
 
-    Pack wrappedFile1 = new Pack(
-        Paths.get("repo/johnny50/city/house/room1#TXT/room1-v2.txt".replace("/", File.separator)),
-        Paths.get("repo/johnny50/city/house/room1.txt".replace("/", File.separator)));
-    Pack wrappedFile2 =
-        new Pack(Paths.get("repo/johnny50/test2#TXT/test2-v3.txt".replace("/", File.separator)),
-            Paths.get("repo/johnny50/test2.txt".replace("/", File.separator)));
+    Pack wrappedFile1 = Pack.createPack(Paths.get("repo/johnny50/city/house/room1#TXT/room1-v2.txt".replace("/", File.separator)));
+//        new Pack(
+//        Paths.get("repo/johnny50/city/house/room1#TXT/room1-v2.txt".replace("/", File.separator)),
+//        Paths.get("repo/johnny50/city/house/room1.txt".replace("/", File.separator)));
+    Pack wrappedFile2 = Pack.createPack(Paths.get("repo/johnny50/test2#TXT/test2-v3.txt".replace("/", File.separator)));
+//        new Pack(Paths.get("repo/johnny50/test2#TXT/test2-v3.txt".replace("/", File.separator)),
+//            Paths.get("repo/johnny50/test2.txt".replace("/", File.separator)));
     List<Pack> expectedList = new ArrayList<>();
     expectedList.add(wrappedFile1);
     expectedList.add(wrappedFile2);
@@ -268,9 +269,9 @@ public class FileSystemRepositoryManagerTest {
     RepositoryManager repositoryManager = new FileSystemRepositoryManager();
     List<Pack> files = repositoryManager.get(directory);
 
-    Pack wrappedFile =
-        new Pack(Paths.get("repo/johnny50/test2#TXT/test2-v3.txt".replace("/", File.separator)),
-            Paths.get("repo/johnny50/test2.txt".replace("/", File.separator)));
+    Pack wrappedFile = Pack.createPack(Paths.get("repo/johnny50/test2#TXT/test2-v3.txt".replace("/", File.separator)));
+//        new Pack(Paths.get("repo/johnny50/test2#TXT/test2-v3.txt".replace("/", File.separator)),
+//            Paths.get("repo/johnny50/test2.txt".replace("/", File.separator)));
 
     Assertions.assertEquals(wrappedFile, files.get(0));
   }
@@ -284,9 +285,9 @@ public class FileSystemRepositoryManagerTest {
     RepositoryManager repositoryManager = new FileSystemRepositoryManager();
     List<Pack> files = repositoryManager.get(directory);
 
-    Pack wrappedFile =
-        new Pack(Paths.get("repo/johnny50/test2#TXT/test2-v1.TXT".replace("/", File.separator)),
-            Paths.get("repo/johnny50/test2.TXT".replace("/", File.separator)));
+    Pack wrappedFile = Pack.createPack(Paths.get("repo/johnny50/test2#TXT/test2-v1.TXT".replace("/", File.separator)));
+//        new Pack(Paths.get("repo/johnny50/test2#TXT/test2-v1.TXT".replace("/", File.separator)),
+//            Paths.get("repo/johnny50/test2.TXT".replace("/", File.separator)));
 
     Assertions.assertEquals(wrappedFile, files.get(0));
   }

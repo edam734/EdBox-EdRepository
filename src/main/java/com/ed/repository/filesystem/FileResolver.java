@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import com.ed.repository.exceptions.TransformPathException;
 
 public class FileResolver {
@@ -19,12 +18,7 @@ public class FileResolver {
   }
 
   private void resolve(Path clientFormatPath) throws IOException {
-    if (clientFormatPath.toString().contains("#")) {
-      throw new TransformPathException("Client path contains marker '#'");
-    }
-    String regex = "^(.*\\/)(.*)([\\.*]\\S+)".replace("/", File.separator);
-    Pattern pattern = Pattern.compile(regex);
-    Matcher matcher = pattern.matcher(clientFormatPath.toString().replace("/", File.separator));
+    Matcher matcher = PathParser.clientToRepoMatcher(clientFormatPath);
     boolean matches = matcher.matches();
 
     if (!matches) {
