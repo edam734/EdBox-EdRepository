@@ -60,10 +60,9 @@ public class FileResolver {
       this.filename = parts[0];
       this.extension = "." + parts[1];
     } else {
-      String[] split = rest.split("\\.");
-      this.extension = "." + split[split.length - 1];
-      String[] parts = split[0].split("-v\\d+$");
-      this.filename = parts[0];
+      String[] parts = rest.split("\\.");
+      this.extension = "." + parts[parts.length - 1];
+      this.filename = parts[0].split("-v\\d+$")[0];
     }
   }
 
