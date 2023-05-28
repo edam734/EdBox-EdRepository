@@ -10,7 +10,7 @@ import java.util.Objects;
  * @author Eduardo Amorim
  *
  */
-public class WrappedFile {
+public class Pack {
 
   private Path content;
   private Path destination;
@@ -19,10 +19,23 @@ public class WrappedFile {
    * @param content A file
    * @param destination Where the content should be saved
    */
-  public WrappedFile(Path content, Path destination) {
+  private Pack(Path content, Path destination) {
     super();
     this.content = content;
     this.destination = destination;
+  }
+
+  /**
+   * This class has the filesystem repository point of view. Get's a path in repository's format an
+   * generate a destination equivalent to the client side.
+   * 
+   * @param path - a repository's path
+   * @return A new Pack containing the same path in two different formats
+   * @throws TransformPathException if something's wrong with the argument path
+   */
+  public static Pack createPack(Path path) {
+    Path unversionedPath = PathParser.repoToClientPath(path);
+    return new Pack(path, unversionedPath);
   }
 
   public Path getContent() {
@@ -50,13 +63,13 @@ public class WrappedFile {
       return false;
     if (getClass() != obj.getClass())
       return false;
-    WrappedFile other = (WrappedFile) obj;
+    Pack other = (Pack) obj;
     return Objects.equals(content, other.content) && Objects.equals(destination, other.destination);
   }
 
   @Override
   public String toString() {
-    return "WrappedFile [content=" + content + ", destination=" + destination + "]";
+    return "Pack [content=" + content + ", destination=" + destination + "]";
   }
 
 }
