@@ -3,76 +3,109 @@ package com.ed.repository.filesystem;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import com.ed.repository.exceptions.TransformPathException;
 
 public class FileResolver {
 
-  private Path repositoryDirectoryPath = null;
-  private Path repositoryFilePath = null;
-  private Path indexFilePath = null;
-  private int nextVersion = -1;
+  private String directory = "";
+  private String filename = "";
+  private String versionsFolder = "";
+  private String extension = "";
 
-  public FileResolver(Path path) throws IOException {
-    resolve(path);
+  private Path repositoryDirectoryPath = null;
+  private Path indexFilePath = null;
+
+  private FileResolver() {
+    super();
   }
 
-  private void resolve(Path clientFormatPath) throws IOException {
-    Matcher matcher = PathParser.clientToRepoMatcher(clientFormatPath);
+  public static FileResolver createClientFileResolver(Path path) throws IOException {
+    FileResolver resolver = new FileResolver();
+    resolver.resolveClient(path);
+    return resolver;
+  }
+
+  public static FileResolver createRepoFileResolver(Path path) {
+    FileResolver resolver = new FileResolver();
+    resolver.resolveRepo(path);
+    return resolver;
+  }
+
+  private void resolveClient(Path path) throws IOException {
+    Matcher matcher = PathParser.getClientToRepoMatcher(path);
     boolean matches = matcher.matches();
 
     if (!matches) {
-      throw new TransformPathException("The client path is invalid");
+      throw new TransformPathException("The client's path sintaxe is invalid");
     }
-    String path = matcher.group(1);
-    String filename = matcher.group(2);
-    String extension = matcher.group(3);
-
-    this.indexFilePath = buildPathToIndexFile(path, filename, extension);
-    this.nextVersion = getNextVersion();
-    this.repositoryDirectoryPath = buildPathToRepositoryDirectoryPath(path, filename, extension);
-    this.repositoryFilePath = buildPathToRepositoryFilePath(path, filename, extension, nextVersion);
+    this.directory = matcher.group(1);
+    this.filename = matcher.group(2);
+    this.extension = matcher.group(3);
   }
 
-  private static Path buildPathToRepositoryDirectoryPath(String path, String filename,
-      String extension) {
-    String pathStr =
-        String.format("%s%s%s", path, filename, extension.toUpperCase().replace(".", "#"));
-    return Path.of(pathStr);
+  private void resolveRepo(Path path) {
+    Matcher matcher = PathParser.getRepoToClientMatcher(path);
+    boolean matches = matcher.matches();
+
+    if (!matches) {
+      throw new TransformPathException("The repository's path sintaxe is invalid");
+    }
+    this.directory = matcher.group(1);
+    this.versionsFolder = matcher.group(2);
+    String rest = matcher.group(3);
+    if (rest.isBlank()) {
+      String[] parts = versionsFolder.split("#");
+      this.filename = parts[0];
+      this.extension = "." + parts[1];
+    } else {
+      String[] split = rest.split("\\.");
+      this.extension = "." + split[split.length - 1];
+      String[] parts = split[0].split("-v\\d+$");
+      this.filename = parts[0];
+    }
   }
 
-  private static Path buildPathToRepositoryFilePath(String path, String filename, String extension,
-      int version) {
-    String pathStr =
-        String.format("%s%s%s%s%s%s%d%s", path, filename, extension.toUpperCase().replace(".", "#"),
-            File.separator, filename, "-v", version, extension);
-    return Path.of(pathStr);
-  }
-
-  private static Path buildPathToIndexFile(String path, String filename, String extension) {
-    String pathStr = String.format("%s%s%s%s%s%s", path, filename,
-        extension.toUpperCase().replace(".", "#"), File.separator, filename, ".index.txt");
+  public Path getRepositoryFilePath(int version) {
+    String pathStr = String.format("%s%s%s%s%s%s%d%s", directory, filename,
+        extension.toUpperCase().replace(".", "#"), File.separator, filename, "-v", version,
+        extension);
     return Path.of(pathStr);
   }
 
   public Path getRepositoryDirectoryPath() {
+    if (Objects.isNull(repositoryDirectoryPath)) {
+      String pathStr =
+          String.format("%s%s%s", directory, filename, extension.toUpperCase().replace(".", "#"));
+      this.repositoryDirectoryPath = Path.of(pathStr);
+    }
     return repositoryDirectoryPath;
   }
 
-  public Path getRepositoryFilePath() {
-    return repositoryFilePath;
-  }
-
   public Path getIndexFilePath() {
+    if (Objects.isNull(indexFilePath)) {
+      String pathStr = String.format("%s%s%s%s%s%s", directory, filename,
+          extension.toUpperCase().replace(".", "#"), File.separator, filename, ".index.txt");
+      this.indexFilePath = Path.of(pathStr);
+    }
     return indexFilePath;
   }
 
-  public int getNextVersion() throws IOException {
-    if (nextVersion == -1) {
-      IndexFileEntry lastEntry = IndexFileEntry.readEntry(this.indexFilePath);
-      int latestVersion = lastEntry.getKey();
-      return ++latestVersion; // the next version is 1 up from the latest one in the archive
-    }
-    return nextVersion;
+  public int getLatestVersion() throws IOException {
+    IndexFileEntry lastEntry = IndexFileEntry.readEntry(getIndexFilePath());
+    return lastEntry.getKey();
   }
+
+  // -----------
+
+  public Path getClientDirectoryPath() {
+    return Path.of(directory);
+  }
+
+  public Path getClientFilePath() {
+    String pathStr = String.format("%s%s%s", directory, filename, extension);
+    return Path.of(pathStr);
+  }
+
 }

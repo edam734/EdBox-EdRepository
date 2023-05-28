@@ -1,6 +1,5 @@
 package com.ed.repository.filesystem;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
@@ -9,39 +8,34 @@ import java.nio.file.CopyOption;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import com.ed.repository.exceptions.FileVersionException;
 
 public class FileSystemEnvironmentResolver {
 
   final static Charset ENCODING = StandardCharsets.UTF_8;
-  final static String MARK = "#";
 
-  private String extension;
-  private String filename;
-  private Path directory;
-  private Path indexFile;
 
   public static boolean createFile(final InputStream in, Path path, final String username,
       CopyOption... options) throws IOException {
-    FileResolver fileResolver = new FileResolver(path);
+    ClientFileResolver fileResolver = new ClientFileResolver(path);
 
     // create repository's directory (if doesn't exist)
-    Path repoDir = fileResolver.getRepositoryDirectoryPath();
-    boolean wasDirectoryCreated = FileSystemEnvironmentResolver.createDirectory(repoDir);
+    Path versionsFolder = fileResolver.getRepositoryDirectoryPath();
+    boolean wasDirectoryCreated = FileSystemEnvironmentResolver.createDirectory(versionsFolder);
     if (!wasDirectoryCreated) {
       return false;
     }
     // write new entry in index file
     Path indexFilePath = fileResolver.getIndexFilePath();
     createFileLazily(indexFilePath);
-    int version = fileResolver.getNextVersion();
-    IndexFileEntry.writeEntry(indexFilePath, version, username);
+    
+    // the next version is 1 up from the latest one in the archive
+    int latestVersion = fileResolver.getLatestVersion();
+    int nextVersion = ++latestVersion;
+    IndexFileEntry.writeEntry(indexFilePath, nextVersion, username);
 
     // write content in repository's file
-    Path target = fileResolver.getRepositoryFilePath();
+    Path target = fileResolver.getRepositoryFilePath(nextVersion);
     boolean suceess = Files.copy(in, target, options) > 0;
     return suceess;
   }
@@ -60,124 +54,40 @@ public class FileSystemEnvironmentResolver {
   }
 
   /**
-   * @requires path is a file
+   * Get latest version of a file
    * 
-   * @param path
-   */
-  public FileSystemEnvironmentResolver(Path path) {
-    if (isVersioned(path)) {
-      path = getUnversionedFilename(path);
-    }
-    resolve(path);
-  }
-
-  public static boolean isVersioned(Path path) {
-    return path.toFile().getAbsolutePath().contains(MARK);
-  }
-
-  /*
-   * prepares the repository environment for this file (path)
-   * 
-   */
-  private void resolve(Path path) {
-    extension = getExtension(path.getFileName().toString());
-    filename = removeExtension(path.getFileName().toString());
-    Path pathWithoutExtension = Paths.get(removeExtension(path.toString()));
-    directory = directoryPath(pathWithoutExtension,
-        String.format("%s%s%s", filename, MARK, extension.substring(1).toUpperCase()));
-    indexFile = indexFilePath(directory, filename);
-  }
-
-  private String getExtension(final String filename) {
-    return filename.substring(filename.lastIndexOf('.'));
-  }
-
-  private String removeExtension(final String filename) {
-    return filename.substring(0, filename.lastIndexOf('.'));
-  }
-
-  private Path directoryPath(final Path path, final String directoryName) {
-    return Paths.get(path.getParent().toString(), directoryName);
-  }
-
-  private Path indexFilePath(final Path path, String name) {
-    return Paths.get(path.toString(), (name + ".index.txt"));
-  }
-
-  public Path getLastestVersionedPath() throws IOException {
-    return getVersionedPath(getLatestVersion());
-  }
-
-  public Path getVersionedPath(int version) {
-    Path target = Paths.get(String.format("%s%s-v%d%s", directory.toString(),
-        (File.separator + filename), version, extension));
-    return target;
-  }
-
-  public int getLatestVersion() throws IOException {
-    List<String> lines = Files.readAllLines(this.indexFile);
-    if (lines.size() == 0) {
-      return 0; // empty file for some reason
-    }
-    String lastLine = lines.get(lines.size() - 1);
-    return Integer.parseInt(lastLine.split(" : ")[0]);
-  }
-
-  /**
-   * Get the version number X of a string like this: folder1/folder2/.../filename-vX.extension
-   * 
-   * @param filename
+   * @param path - A representation of a file in the server's repository
    * @return
+   * @throws IOException
    */
-  public static int getVersionFromFilename(String filename) {
-    Pattern p = Pattern.compile("-v[0-9]+?\\.");
-    Matcher m = p.matcher(filename);
-    if (m.find()) {
-      String val = m.group().subSequence(2, m.group().length() - 1).toString();
-      if (!val.isEmpty()) {
-        return Integer.valueOf(val);
-      }
-    }
-    return -1;
-
+  public static Pack getFile(Path path) throws IOException {
+    return getFile(path, -1);
   }
 
-
   /**
-   * Converts a versioned name to an unversioned name
+   * Get specific version of a file
    * 
-   * @param path The path to convert
-   * @requires path must be a versioned file name
-   * @return an unversioned name
+   * @param path - A representation of a file in the server's repository
+   * @param version - The desired version of the file
+   * @return
+   * @throws IOException
+   * @throws FileVersionException
    */
-  public static Path getUnversionedFilename(Path path) {
-    // dir1/dir2.../filename#TXT
-    if (path.getFileName().toString().contains(MARK)) {
-      String[] parts = path.getFileName().toString().split(MARK);
-      String part = parts[0];
-      String extension = "." + parts[1].toLowerCase();
-      String filename = part + extension;
-      return Paths.get(path.getParent().toString(), filename);
+  public static Pack getFile(Path path, int version) throws IOException {
+    // file HAS to be a directory in format. dir1/dir2.../filename#extension/
+
+    RepositoryFileResolver fileResolver = new RepositoryFileResolver(path);
+    int latestVersion = fileResolver.getLatestVersion();
+    if (version == -1) {
+      version = latestVersion; // set search for the latest version
     }
-    // dir1/dir2.../filename#TXT/filename-vX.txt
-    else if (path.getParent().toString().contains(MARK)) {
-      String complete = path.getFileName().toString();
-      Pattern p = Pattern.compile("-v[0-9]+?\\.");
-      Matcher m = p.matcher(complete);
-      String newFilename = complete;
-      if (m.find()) {
-        int idx1 = m.start();
-        int idx2 = m.end() - 1;
-        newFilename =
-            complete.substring(0, idx1).concat(complete.substring(idx2, complete.length()));
-      }
-      String dir = path.getParent().getParent().toString();
-      return Paths.get(dir, newFilename);
+    if (version > latestVersion) {
+      String errorMsg = "Version %s bigger than the latest version %s";
+      throw new FileVersionException(String.format(errorMsg, version, latestVersion));
     }
-    // dir1/dir2.../filename.TXT
-    else {
-      return path;
-    }
+    Path packContent = fileResolver.getRepositoryFilePath(version);
+    Pack pack = Pack.createPack(packContent);
+    return pack;
   }
 
   /**
@@ -198,5 +108,4 @@ public class FileSystemEnvironmentResolver {
       return false;
     }
   }
-
 }

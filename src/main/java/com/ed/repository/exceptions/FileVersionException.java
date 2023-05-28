@@ -1,11 +1,11 @@
 package com.ed.repository.exceptions;
 
-public class VersionGreaterThanLatestVersionException extends RuntimeException {
+public class FileVersionException extends RuntimeException {
   private static final long serialVersionUID = 1L;
 
   String message;
 
-  public VersionGreaterThanLatestVersionException(String message) {
+  public FileVersionException(String message) {
     this.message = message;
   }
 

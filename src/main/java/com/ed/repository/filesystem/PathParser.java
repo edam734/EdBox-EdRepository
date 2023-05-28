@@ -22,7 +22,7 @@ public class PathParser {
    * @return A Matcher with groups to extract.
    * @throws TransformPathException if it's not a client's path
    */
-  public static Matcher clientToRepoMatcher(Path path) {
+  public static Matcher getClientToRepoMatcher(Path path) {
     if (path.toString().contains("#")) {
       throw new TransformPathException("Should be a client's path.");
     }
@@ -43,7 +43,7 @@ public class PathParser {
    * @throws TransformPathException if something's wrong with the argument path
    */
   public static Path clientToRepoPath(Path clientFormatPath, int version) {
-    Matcher matcher = clientToRepoMatcher(clientFormatPath);
+    Matcher matcher = getClientToRepoMatcher(clientFormatPath);
     boolean matches = matcher.matches();
 
     if (!matches) {
@@ -74,12 +74,12 @@ public class PathParser {
    * @return A Matcher with groups to extract.
    * @throws TransformPathException if it's not a repository's path
    */
-  public static Matcher repoToClientMatcher(Path path) {
+  public static Matcher getRepoToClientMatcher(Path path) {
     if (!path.toString().contains("#")) {
       throw new TransformPathException("Should be a repository's path.");
     }
     String regex =
-        "^(.*\\/(?=[^#]*#))([^\\/]*[#][^\\/]*)(\\/[^\\/]*)$".replace("/", File.separator);
+        "^(.*\\/(?=[^#]*#))([^\\/]*[#][^\\/]*)(\\/*[^\\/]*)$".replace("/", File.separator);
     Pattern pattern = Pattern.compile(regex);
     Matcher matcher = pattern.matcher(path.toString().replace("/", File.separator));
 
@@ -95,7 +95,7 @@ public class PathParser {
    * @throws TransformPathException if something's wrong with the argument path
    */
   public static Path repoToClientPath(Path repositoryFormatPath) {
-    Matcher matcher = repoToClientMatcher(repositoryFormatPath);
+    Matcher matcher = getRepoToClientMatcher(repositoryFormatPath);
     boolean matches = matcher.matches();
 
     if (!matches) {
@@ -112,5 +112,27 @@ public class PathParser {
     }
 
     return Path.of(clientFormatPath);
+  }
+
+   public static boolean isRepoFormat(Path path) {
+   return path.toString().contains("#");
+   }
+
+  /**
+   * Get the version number X of a string like this: folder1/folder2/.../filename-vX.extension
+   * 
+   * @param filename
+   * @return
+   */
+  public static int getVersionFromFilename(String filename) {
+    Pattern p = Pattern.compile("-v[0-9]+?\\.");
+    Matcher m = p.matcher(filename);
+    if (m.find()) {
+      String val = m.group().subSequence(2, m.group().length() - 1).toString();
+      if (!val.isEmpty()) {
+        return Integer.valueOf(val);
+      }
+    }
+    return -1;
   }
 }

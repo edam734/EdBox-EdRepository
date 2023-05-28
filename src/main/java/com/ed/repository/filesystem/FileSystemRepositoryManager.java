@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import com.ed.repository.exceptions.RepositoryManagementException;
-import com.ed.repository.exceptions.VersionGreaterThanLatestVersionException;
 
 public class FileSystemRepositoryManager extends RepositoryManager {
 
@@ -55,8 +54,8 @@ public class FileSystemRepositoryManager extends RepositoryManager {
   private static List<Pack> get(Path path, List<Pack> subfiles) throws IOException {
     if (Files.isDirectory(path)) {
       // verify if it's a directory that is a representation of a file in the server's repository
-      if (FileSystemEnvironmentResolver.isVersioned(path)) {
-        Pack pack = getFile(path);
+      if (PathParser.isRepoFormat(path)) {
+        Pack pack = FileSystemEnvironmentResolver.getFile(path);
         subfiles.add(pack);
       }
       // it's a common directory
@@ -69,8 +68,8 @@ public class FileSystemRepositoryManager extends RepositoryManager {
     }
     // else, it's a file
     else {
-      // must be a versioned file
-      if (FileSystemEnvironmentResolver.isVersioned(path)) {
+      // must be a reposiroty file
+      if (PathParser.isRepoFormat(path)) {
         Pack pack = Pack.createPack(path);
         subfiles.add(pack);
       }
@@ -78,44 +77,6 @@ public class FileSystemRepositoryManager extends RepositoryManager {
     return subfiles;
   }
 
-
-  /**
-   * Get latest version of a file
-   * 
-   * @param path - A representation of a file in the server's repository
-   * @return
-   * @throws IOException
-   */
-  public static Pack getFile(Path path) throws IOException {
-    return getFile(path, -1);
-  }
-
-  /**
-   * Get specific version of a file
-   * 
-   * @param path - A representation of a file in the server's repository
-   * @param version - The desired version of the file
-   * @return
-   * @throws IOException
-   */
-  public static Pack getFile(Path path, int version) throws IOException {
-    // file HAS to be a directory in format. dir1/dir2.../filename#extension/
-
-    FileSystemEnvironmentResolver serverRepoEnvironmentResolver =
-        new FileSystemEnvironmentResolver(path);
-    int latestVersion = serverRepoEnvironmentResolver.getLatestVersion();
-    if (version == -1) {
-      // set search for the latest version
-      version = latestVersion;
-    }
-    if (version > latestVersion) {
-      throw new VersionGreaterThanLatestVersionException(
-          String.format("Version %s bigger than the latest version %s", version, latestVersion));
-    }
-    Path content = serverRepoEnvironmentResolver.getVersionedPath(version);
-    Pack pack = Pack.createPack(content);
-    return pack;
-  }
 
   @Override
   public RepositoryManager createRepositoryManager() {
