@@ -61,8 +61,8 @@ public class FileResolver {
       this.extension = "." + parts[1];
     } else {
       String[] parts = rest.split("\\.");
-      this.extension = "." + parts[parts.length - 1];
       this.filename = parts[0].split("-v\\d+$")[0];
+      this.extension = "." + parts[parts.length - 1];
     }
   }
 

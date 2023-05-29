@@ -14,21 +14,20 @@ public class FileSystemEnvironmentResolver {
 
   final static Charset ENCODING = StandardCharsets.UTF_8;
 
-
   public static boolean createFile(final InputStream in, Path path, final String username,
       CopyOption... options) throws IOException {
     ClientFileResolver fileResolver = new ClientFileResolver(path);
 
     // create repository's directory (if doesn't exist)
     Path versionsFolder = fileResolver.getRepositoryDirectoryPath();
-    boolean wasDirectoryCreated = FileSystemEnvironmentResolver.createDirectory(versionsFolder);
+    boolean wasDirectoryCreated = createDirectory(versionsFolder);
     if (!wasDirectoryCreated) {
       return false;
     }
     // write new entry in index file
     Path indexFilePath = fileResolver.getIndexFilePath();
     createFileLazily(indexFilePath);
-    
+
     // the next version is 1 up from the latest one in the archive
     int latestVersion = fileResolver.getLatestVersion();
     int nextVersion = ++latestVersion;
@@ -38,19 +37,6 @@ public class FileSystemEnvironmentResolver {
     Path target = fileResolver.getRepositoryFilePath(nextVersion);
     boolean suceess = Files.copy(in, target, options) > 0;
     return suceess;
-  }
-
-  /**
-   * Creates a file only if it doesn't exist. Else, do nothing
-   * 
-   * @param path - the path to the new file
-   * @throws IOException if an I/O error occurs or the parent directory does not exist
-   */
-  private static void createFileLazily(Path path) throws IOException {
-    try {
-      Files.createFile(path);
-    } catch (FileAlreadyExistsException e) {
-    }
   }
 
   /**
@@ -88,6 +74,19 @@ public class FileSystemEnvironmentResolver {
     Path packContent = fileResolver.getRepositoryFilePath(version);
     Pack pack = Pack.createPack(packContent);
     return pack;
+  }
+
+  /**
+   * Creates a file only if it doesn't exist. Else, do nothing
+   * 
+   * @param path - the path to the new file
+   * @throws IOException if an I/O error occurs or the parent directory does not exist
+   */
+  public static void createFileLazily(Path path) throws IOException {
+    try {
+      Files.createFile(path);
+    } catch (FileAlreadyExistsException e) {
+    }
   }
 
   /**
